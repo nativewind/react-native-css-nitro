@@ -1,0 +1,17 @@
+{
+  "cxxNamespace": ["cssnitro"],
+  "ios": {
+    "iosModuleName": "CssNitro"
+  },
+  "android": {
+    "androidNamespace": ["cssnitro"],
+    "androidCxxLibName": "cssnitro"
+  },
+  "autolinking": {
+    "CssNitro": {
+      "swift": "CssNitro",
+      "kotlin": "CssNitro"
+    }
+  },
+  "ignorePaths": ["node_modules"]
+}
