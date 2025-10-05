@@ -1,8 +1,10 @@
 // Computed<T>: derived observable powered by an internal Effect
 #pragma once
 
+#include <atomic>
 #include <functional>
 #include <memory>
+#include <mutex>
 #include <utility>
 
 #include "effect.hpp"
@@ -41,16 +43,20 @@ public:
   static std::shared_ptr<Computed> create(ComputeFn cb, U &&initial = U{}) {
     auto ptr = std::shared_ptr<Computed>(
         new Computed(std::move(cb), std::forward<U>(initial)));
-    // Prime dependencies and value
-    ptr->effect_.run();
     return ptr;
   }
 
   // Read current value
-  inline const T &get() const noexcept { return value_->get(); }
+  inline const T &get() const noexcept {
+    ensureInit();
+    return value_->get();
+  }
 
   // Subscribe effect to this computed
-  inline const T &get(Effect &eff) { return value_->get(eff); }
+  inline const T &get(Effect &eff) {
+    ensureInit();
+    return value_->get(eff);
+  }
 
   // Allow external overrides if desired
   template <class V> inline void set(V &&v) { value_->set(std::forward<V>(v)); }
@@ -72,7 +78,20 @@ private:
 
   ComputeFn compute_;
   std::shared_ptr<Observable<T>> value_;
-  Effect effect_;
+  mutable Effect effect_;
+  // lazy init state
+  mutable std::atomic<bool> initialized_{false};
+  mutable std::mutex init_mutex_;
+
+  inline void ensureInit() const {
+    if (initialized_.load(std::memory_order_acquire))
+      return;
+    std::lock_guard<std::mutex> lk(init_mutex_);
+    if (!initialized_.load(std::memory_order_relaxed)) {
+      const_cast<Effect &>(effect_).run();
+      initialized_.store(true, std::memory_order_release);
+    }
+  }
 };
 
 } // namespace nitro

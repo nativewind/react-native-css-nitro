@@ -131,3 +131,88 @@ TEST_CASE("batched updates coalesce effect runs") {
   CHECK(sum->get() == 30);
   CHECK(runs == 1);
 }
+
+TEST_CASE("unbatched updates run effect for each change") {
+  auto a = Observable<int>::create(1);
+  auto b = Observable<int>::create(2);
+  auto sum = Computed<int>::create(
+      [a, b](const int &, auto &get) { return get(*a) + get(*b); }, 0);
+
+  int runs = 0;
+  Effect spy([&] {
+    ++runs;
+    (void)sum->get(spy); // keep subscription up to date
+  });
+
+  // Initial subscribe
+  (void)sum->get(spy);
+  runs = 0;
+
+  // Without batching, two changes should trigger two runs
+  a->set(10); // sum -> 12
+  b->set(20); // sum -> 30
+
+  CHECK(sum->get() == 30);
+  CHECK(runs == 2);
+}
+
+TEST_CASE("computed is lazy: computes on first get() only") {
+  auto a = Observable<int>::create(1);
+  auto b = Observable<int>::create(2);
+  int computes = 0;
+
+  auto sum = Computed<int>::create(
+      [&](const int &, auto &get) {
+        ++computes;
+        return get(*a) + get(*b);
+      },
+      0);
+
+  // No compute on creation
+  CHECK(computes == 0);
+
+  // Changes before first get do not trigger compute
+  a->set(10);
+  b->set(20);
+  CHECK(computes == 0);
+
+  // First read initializes and computes
+  CHECK(sum->get() == 30);
+  CHECK(computes == 1);
+
+  // Subsequent source change triggers exactly one compute via subscriptions
+  b->set(5);
+  CHECK(computes == 2);
+  CHECK(sum->get() == 15);
+}
+
+TEST_CASE(
+    "computed is lazy: get(effect) also initializes on first subscription") {
+  auto a = Observable<int>::create(3);
+  auto b = Observable<int>::create(4);
+  int computes = 0;
+
+  auto sum = Computed<int>::create(
+      [&](const int &, auto &get) {
+        ++computes;
+        return get(*a) + get(*b);
+      },
+      0);
+
+  CHECK(computes == 0);
+
+  Effect ext([&] {
+    // resubscribe to stay subscribed
+    (void)sum->get(ext);
+  });
+
+  // First subscription initializes
+  (void)sum->get(ext);
+  CHECK(computes == 1);
+  CHECK(sum->get() == 7);
+
+  // Changes trigger recompute after initialization
+  a->set(10);
+  CHECK(computes == 2);
+  CHECK(sum->get() == 14);
+}
