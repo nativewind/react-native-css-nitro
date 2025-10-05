@@ -27,7 +27,12 @@ public:
             return;
           }
           tagsToProps->set(Updates{});
-          applyToShadowTree(std::move(pending));
+          // Isolate application: if addUpdate() is called from within the
+          // applier, defer the resulting effect run until after we finish
+          // applying the current batch.
+          Effect::batch([this, p = std::move(pending)]() mutable {
+            applyToShadowTree(std::move(p));
+          });
         }) {
     (void)tagsToProps->get(effect_);
   }
