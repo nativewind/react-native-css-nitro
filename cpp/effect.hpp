@@ -84,9 +84,9 @@ private:
   }
 
   // Per-thread batching state
-  static thread_local int s_batchDepth;
-  static thread_local std::vector<Effect *> s_pending;
-  static thread_local std::unordered_set<Effect *> s_pendingSet;
+  static inline thread_local int s_batchDepth = 0;
+  static inline thread_local std::vector<Effect *> s_pending{};
+  static inline thread_local std::unordered_set<Effect *> s_pendingSet{};
 
   static void flushPending() {
     // Swap out current queue to allow re-entrancy
@@ -99,10 +99,5 @@ private:
     }
   }
 };
-
-// Definition of thread_local batching state
-thread_local int Effect::s_batchDepth = 0;
-thread_local std::vector<Effect *> Effect::s_pending;
-thread_local std::unordered_set<Effect *> Effect::s_pendingSet;
 
 } // namespace nitro
