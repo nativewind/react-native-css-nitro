@@ -104,3 +104,30 @@ TEST_CASE("computed depending on another computed propagates updates") {
   CHECK(c1->get() == 7);
   CHECK(c2->get() == 70);
 }
+
+TEST_CASE("batched updates coalesce effect runs") {
+  auto a = Observable<int>::create(1);
+  auto b = Observable<int>::create(2);
+  auto sum = Computed<int>::create(
+      [a, b](const int &, auto &get) { return get(*a) + get(*b); }, 0);
+
+  int runs = 0;
+  Effect spy([&] {
+    ++runs;
+    (void)sum->get(spy); // subscribe to sum changes
+  });
+
+  // Initial subscribe
+  (void)sum->get(spy);
+  runs = 0;
+
+  // Without batching: two sets would normally cause two runs.
+  // With batching: they should coalesce into one.
+  Effect::batch([&] {
+    a->set(10);
+    b->set(20);
+  });
+
+  CHECK(sum->get() == 30);
+  CHECK(runs == 1);
+}

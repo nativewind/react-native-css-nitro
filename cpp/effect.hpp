@@ -3,6 +3,7 @@
 #include <functional>
 #include <memory>
 #include <mutex>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -39,15 +40,69 @@ public:
 
   // Rerun the effect: drop current subscriptions, then call the callback
   void run() {
-    dispose();
-    if (callback_)
-      callback_();
+    if (s_batchDepth > 0) {
+      // Coalesce within this thread's batch
+      if (s_pendingSet.insert(this).second) {
+        s_pending.push_back(this);
+      }
+      return;
+    }
+    runImmediate();
+  }
+
+  // Begin/end a batch. During a batch, run() calls are queued and flushed once.
+  static void beginBatch() { ++s_batchDepth; }
+  static void endBatch() {
+    if (s_batchDepth == 0)
+      return;
+    if (--s_batchDepth == 0) {
+      flushPending();
+    }
+  }
+
+  template <class F> static void batch(F &&fn) {
+    beginBatch();
+    try {
+      std::forward<F>(fn)();
+    } catch (...) {
+      endBatch();
+      throw;
+    }
+    endBatch();
   }
 
 private:
   Callback callback_;
   mutable std::mutex mutex_;
   std::vector<std::function<void()>> removers_;
+
+  // Immediate execution helper
+  void runImmediate() {
+    dispose();
+    if (callback_)
+      callback_();
+  }
+
+  // Per-thread batching state
+  static thread_local int s_batchDepth;
+  static thread_local std::vector<Effect *> s_pending;
+  static thread_local std::unordered_set<Effect *> s_pendingSet;
+
+  static void flushPending() {
+    // Swap out current queue to allow re-entrancy
+    std::vector<Effect *> queue;
+    queue.swap(s_pending);
+    s_pendingSet.clear();
+    for (Effect *e : queue) {
+      if (e)
+        e->runImmediate();
+    }
+  }
 };
+
+// Definition of thread_local batching state
+thread_local int Effect::s_batchDepth = 0;
+thread_local std::vector<Effect *> Effect::s_pending;
+thread_local std::unordered_set<Effect *> Effect::s_pendingSet;
 
 } // namespace nitro
