@@ -28,7 +28,8 @@ private:
       noexcept(T(std::forward<U>(initial))));
   // Internal: called by the effect's remover lambda to detach
   void remove(Effect *eff) noexcept;
-  template <class V> void updateAndNotify(V &&v);
+  template <class V>
+  void updateAndNotify(V &&v) noexcept(noexcept(value_ = std::forward<V>(v)));
 
   mutable std::shared_mutex mutex_;
   T value_{};
@@ -41,7 +42,9 @@ private:
 template <class T>
 template <class U>
 inline std::shared_ptr<Observable<T>> Observable<T>::create(U &&initial) {
-  auto ptr = std::make_shared<Observable<T>>(std::forward<U>(initial));
+  // Note: std::make_shared cannot access a private constructor; use direct new.
+  auto ptr = std::shared_ptr<Observable<T>>(
+      new Observable<T>(std::forward<U>(initial)));
   ptr->weak_ = ptr;
   return ptr;
 }
