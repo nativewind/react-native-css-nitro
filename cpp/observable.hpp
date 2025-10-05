@@ -28,8 +28,7 @@ private:
       noexcept(T(std::forward<U>(initial))));
   // Internal: called by the effect's remover lambda to detach
   void remove(Effect *eff) noexcept;
-  template <class V>
-  void updateAndNotify(V &&v) noexcept(noexcept(value_ = std::forward<V>(v)));
+  template <class V> void updateAndNotify(V &&v);
 
   mutable std::shared_mutex mutex_;
   T value_{};
@@ -86,14 +85,15 @@ template <class T> inline void Observable<T>::remove(Effect *eff) noexcept {
 
 template <class T>
 template <class V>
-inline void Observable<T>::updateAndNotify(V &&v) noexcept(
-    noexcept(value_ = std::forward<V>(v))) {
+inline void Observable<T>::updateAndNotify(V &&v) {
   std::vector<Effect *> current;
   {
     std::unique_lock<std::shared_mutex> lk(mutex_);
-    if (value_ == v)
-      return; // no change
-    value_ = std::forward<V>(v);
+    // Build candidate value once for comparison and potential assignment
+    T candidate = std::forward<V>(v);
+    if (value_ == candidate)
+      return; // no change per equality predicate
+    value_ = std::move(candidate);
     current.reserve(effects_.size());
     for (auto *e : effects_)
       current.push_back(e);

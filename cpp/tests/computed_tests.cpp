@@ -2,6 +2,7 @@
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include <doctest/doctest.h>
 
+#include <cstdlib>
 #include <string>
 
 #include "../computed.hpp"
@@ -154,6 +155,52 @@ TEST_CASE("unbatched updates run effect for each change") {
 
   CHECK(sum->get() == 30);
   CHECK(runs == 2);
+}
+
+TEST_CASE("observable default equality suppresses redundant notifications") {
+  auto a = Observable<int>::create(1);
+  int runs = 0;
+  Effect spy([&] {
+    ++runs;
+    (void)a->get(spy);
+  });
+  (void)a->get(spy);
+  runs = 0;
+
+  a->set(1); // same value - should not notify
+  CHECK(runs == 0);
+
+  a->set(2); // different - notify
+  CHECK(runs == 1);
+}
+
+// custom equality removed; relying on operator== overrides now
+
+namespace {
+struct NearInt {
+  int v;
+  friend bool operator==(const NearInt &a, const NearInt &b) {
+    return std::abs(a.v - b.v) <= 1; // treat values within +/-1 as equal
+  }
+};
+} // namespace
+
+TEST_CASE("observable with custom operator== suppresses notifications") {
+  auto a = Observable<NearInt>::create(NearInt{10});
+
+  int runs = 0;
+  Effect spy([&] {
+    ++runs;
+    (void)a->get(spy);
+  });
+  (void)a->get(spy);
+  runs = 0;
+
+  a->set(NearInt{11}); // within tolerance - no notify
+  CHECK(runs == 0);
+
+  a->set(NearInt{13}); // beyond tolerance - notify
+  CHECK(runs == 1);
 }
 
 TEST_CASE("computed is lazy: computes on first get() only") {
