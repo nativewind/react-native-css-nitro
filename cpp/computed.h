@@ -5,8 +5,8 @@
 #include <memory>
 #include <utility>
 
-#include "effect.hpp"
-#include "observable.hpp"
+#include "effect.h"
+#include "observable.h"
 
 namespace nitro {
 

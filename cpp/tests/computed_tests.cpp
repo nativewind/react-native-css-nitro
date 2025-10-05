@@ -4,9 +4,9 @@
 
 #include <string>
 
-#include "../computed.hpp"
-#include "../effect.hpp"
-#include "../observable.hpp"
+#include "../computed.h"
+#include "../effect.h"
+#include "../observable.h"
 
 using nitro::Computed;
 using nitro::Effect;
