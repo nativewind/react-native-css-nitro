@@ -52,6 +52,7 @@ public:
   // Subscribe effect to this computed
   inline const T &get(Effect &eff) { return value_->get(eff); }
 
+  // Allow external overrides if desired
   template <class V> inline void set(V &&v) { value_->set(std::forward<V>(v)); }
 
 private:
