@@ -10,9 +10,8 @@
 
 using nitro::Effect;
 using Manager =
-    nitro::BasicShadowTreeManager<int,
-                                  std::unordered_map<std::string, std::string>,
-                                  facebook::jsi::Runtime *>;
+    nitro::ShadowTreeManager<int, std::unordered_map<std::string, std::string>,
+                             facebook::jsi::Runtime *>;
 
 TEST_CASE("ShadowTreeManager flushes updates to applier and clears queue") {
   Manager mgr(nullptr);

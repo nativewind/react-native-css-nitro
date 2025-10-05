@@ -14,12 +14,19 @@
 
 namespace nitro {
 
+// Traits hook to install platform-specific default applier; default is no-op.
+template <typename Tag, typename DynamicObject, typename RuntimePtr>
+struct ShadowApplierTraits {
+  template <class Manager>
+  static inline void installDefaultApplier(Manager &) {}
+};
+
 template <typename Tag, typename DynamicObject, typename RuntimePtr = void *>
-class BasicShadowTreeManager {
+class ShadowTreeManager {
 public:
   using Updates = std::unordered_map<Tag, DynamicObject>;
 
-  explicit BasicShadowTreeManager(RuntimePtr rt = nullptr)
+  explicit ShadowTreeManager(RuntimePtr rt = nullptr)
       : rt_(rt), tagsToProps(Observable<Updates>::create(Updates{})),
         effect_([this] {
           Updates pending = tagsToProps->get(effect_);
@@ -35,6 +42,9 @@ public:
           });
         }) {
     (void)tagsToProps->get(effect_);
+    // Allow platform specializations to set a default applier.
+    ShadowApplierTraits<Tag, DynamicObject, RuntimePtr>::installDefaultApplier(
+        *this);
   }
 
   // Merge a whole object into a tag's props; later keys overwrite earlier ones.
@@ -70,22 +80,6 @@ private:
   std::shared_ptr<Observable<Updates>> tagsToProps;
   Effect effect_;
   std::function<void(RuntimePtr, Updates)> applier_;
-};
-
-// RN-specific manager with default applier wired via dlsym.
-class ShadowTreeManager
-    : public BasicShadowTreeManager<
-          facebook::react::Tag, std::unordered_map<std::string, folly::dynamic>,
-          facebook::jsi::Runtime *> {
-  using Base =
-      BasicShadowTreeManager<facebook::react::Tag,
-                             std::unordered_map<std::string, folly::dynamic>,
-                             facebook::jsi::Runtime *>;
-
-public:
-  using Base::BasicShadowTreeManager;
-
-  explicit ShadowTreeManager(facebook::jsi::Runtime *rt);
 };
 
 } // namespace nitro
