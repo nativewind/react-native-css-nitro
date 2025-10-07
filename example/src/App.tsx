@@ -1,12 +1,11 @@
 import { Text, View, StyleSheet } from 'react-native';
-import { multiply } from 'react-native-css-nitro';
-
-const result = multiply(3, 7);
+import { multiply, add } from 'react-native-css-nitro';
 
 export default function App() {
   return (
     <View style={styles.container}>
-      <Text>Result: {result}</Text>
+      <Text>Multiply: {multiply(3, 7)}</Text>
+      <Text>Add: {add(3, 7)}</Text>
     </View>
   );
 }

@@ -10113,7 +10113,6 @@ __metadata:
     react-native-builder-bob: ^0.40.13
     react-native-monorepo-config: ^0.1.9
     react-native-nitro-modules: ^0.28.1
-    react-native-safe-area-context: ^5.5.2
   languageName: unknown
   linkType: soft
 
@@ -10180,16 +10179,6 @@ __metadata:
     react: "*"
     react-native: "*"
   checksum: 54e9ddb7d9c28f39000e9ec06c1ae59fde9dc53454bade6697ae842c4996becd388cdfa1bb0cb504a6ddc25873e1409533a141f94d2f36153bdbf4bf51cf97b1
-  languageName: node
-  linkType: hard
-
-"react-native-safe-area-context@npm:^5.5.2":
-  version: 5.6.1
-  resolution: "react-native-safe-area-context@npm:5.6.1"
-  peerDependencies:
-    react: "*"
-    react-native: "*"
-  checksum: f346615d5f8f26c0c8459d29c149ea3f66684b8ae79cea6fd48d118d039851a69a92955d67b455d0e7ab46639155c4357ebf58ec1859b2377ee459e2a04b602b
   languageName: node
   linkType: hard
 

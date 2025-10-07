@@ -11,6 +11,9 @@
     "CssNitro": {
       "swift": "CssNitro",
       "kotlin": "CssNitro"
+    },
+    "Math": {
+      "cpp": "HybridMath"
     }
   },
   "ignorePaths": ["node_modules"]
