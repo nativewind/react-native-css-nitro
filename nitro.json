@@ -14,6 +14,9 @@
     },
     "Math": {
       "cpp": "HybridMath"
+    },
+    "StyleRegistry": {
+      "cpp": "HybridStyleRegistry"
     }
   },
   "ignorePaths": ["node_modules"]
