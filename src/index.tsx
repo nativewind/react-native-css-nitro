@@ -2,6 +2,9 @@ import { NitroModules } from 'react-native-nitro-modules';
 import type { CssNitro } from './CssNitro.nitro';
 import type { Math } from './specs/Math.nitro';
 
+export { HybridStyleRegistry as StyleRegistry } from './specs/StyleRegistry';
+export { useClassNameMeta } from './native/useClassNameMeta';
+
 const CssNitroHybridObject =
   NitroModules.createHybridObject<CssNitro>('CssNitro');
 

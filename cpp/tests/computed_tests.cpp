@@ -106,6 +106,21 @@ TEST_CASE("computed depending on another computed propagates updates") {
   CHECK(c2->get() == 70);
 }
 
+TEST_CASE("computed dispose stops automatic updates") {
+  auto a = Observable<int>::create(1);
+  auto b = Observable<int>::create(2);
+  auto sum = Computed<int>::create(
+      [a, b](const int &, auto &get) { return get(*a) + get(*b); }, 0);
+
+  CHECK(sum->get() == 3);
+  sum->dispose();
+
+  a->set(10);
+  b->set(20);
+
+  CHECK(sum->get() == 3);
+}
+
 TEST_CASE("batched updates coalesce effect runs") {
   auto a = Observable<int>::create(1);
   auto b = Observable<int>::create(2);

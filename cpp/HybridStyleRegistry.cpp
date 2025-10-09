@@ -1,4 +1,9 @@
 #include "HybridStyleRegistry.hpp"
+#include "Computed.hpp"
+#include <regex>
+#include <vector>
+#include <string>
+#include <iterator>
 
 namespace margelo::nitro::cssnitro {
 
@@ -8,8 +13,8 @@ namespace margelo::nitro::cssnitro {
 
     HybridStyleRegistry::Impl::Impl() = default;
 
-    void HybridStyleRegistry::Impl::registerClassname(const std::string &className,
-                                                      const StyleRule &styleRule) {
+    void HybridStyleRegistry::Impl::set(const std::string &className,
+                                        const StyleRule &styleRule) {
         if (auto existing = getClassnameObservable(className)) {
             existing->set(styleRule);
             return;
@@ -38,19 +43,98 @@ namespace margelo::nitro::cssnitro {
         return it->second;
     }
 
-    ClassnameData HybridStyleRegistry::Impl::registerComponent(
-            const std::string &componentId, const std::string &classNames,
-            double variableContext, double containerContext,
-            const std::vector<ConfigTuple> &configs, const TestPropFn &testPropFn) {
-        return ClassnameData(variableContext, containerContext);;
+    std::vector<std::string>
+    HybridStyleRegistry::Impl::registerComponent(const std::string &componentId,
+                                                 const std::string &classNames,
+                                                 const std::string &variableContext,
+                                                 const std::string &containerContext,
+                                                 const std::vector<ConfigTuple> & /*configs*/,
+                                                 const TestPropFn & /*testPropFn*/) {
+        const std::string registrationKey =
+                variableContext + "::" + containerContext + "::" + classNames;
+
+        auto previous = component_registration_.find(componentId);
+        if (previous != component_registration_.end()) {
+            if (previous->second == registrationKey) {
+                auto cached = style_computed_.find(registrationKey);
+                if (cached != style_computed_.end() && cached->second.computed) {
+                    return cached->second.computed->get();
+                }
+                component_registration_.erase(previous);
+            } else {
+                releaseRegistration(previous->second);
+                component_registration_.erase(previous);
+            }
+        }
+
+        auto &entry = ensureComputedEntry(registrationKey, classNames);
+        ++entry.refCount;
+
+        component_registration_[componentId] = registrationKey;
+
+        return entry.computed->get();
     }
 
-    void HybridStyleRegistry::Impl::unsubscribeComponentRef(double subscriptionId) {
+    void HybridStyleRegistry::Impl::unregisterComponent(const std::string &componentId) {
+        auto it = component_registration_.find(componentId);
+        if (it == component_registration_.end()) {
+            return;
+        }
+
+        releaseRegistration(it->second);
+        component_registration_.erase(it);
     }
 
-    jsi::Value HybridStyleRegistry::Impl::subscribeComponentRef(
+    HybridStyleRegistry::Impl::StyleComputedEntry &
+    HybridStyleRegistry::Impl::ensureComputedEntry(const std::string &registrationKey,
+                                                   const std::string &classNames) {
+        using ClassNamesComputed = reactnativecss::Computed<std::vector<std::string>>;
+        auto [it, inserted] = style_computed_.try_emplace(registrationKey);
+        if (inserted || !it->second.computed) {
+            it->second.computed = ClassNamesComputed::create(
+                    [classNames](const std::vector<std::string> & /*prev*/,
+                                 typename ClassNamesComputed::GetProxy & /*get*/) {
+                        std::regex re(R"(\s+)");
+                        std::sregex_token_iterator tokenIt(classNames.begin(), classNames.end(), re,
+                                                           -1);
+                        std::vector<std::string> classes;
+                        for (; tokenIt != std::sregex_token_iterator(); ++tokenIt) {
+                            if (!tokenIt->str().empty()) {
+                                classes.push_back(tokenIt->str());
+                            }
+                        }
+                        return classes;
+                    });
+            it->second.refCount = 1;
+        }
+        return it->second;
+    }
+
+    void HybridStyleRegistry::Impl::releaseRegistration(const std::string &registrationKey) {
+        auto cacheIt = style_computed_.find(registrationKey);
+        if (cacheIt == style_computed_.end()) {
+            return;
+        }
+
+        if (cacheIt->second.refCount == 0) {
+            return;
+        }
+
+        if (--cacheIt->second.refCount == 0) {
+            if (cacheIt->second.computed) {
+                cacheIt->second.computed->dispose();
+                cacheIt->second.computed.reset();
+            }
+            style_computed_.erase(cacheIt);
+        }
+    }
+
+    jsi::Value HybridStyleRegistry::Impl::link(
             jsi::Runtime &runtime, const jsi::Value &thisValue, const jsi::Value *args,
             size_t count) {
         return jsi::Value(1);
+    }
+
+    void HybridStyleRegistry::Impl::unlink(double subscriptionId) {
     }
 } // namespace margelo::nitro::cssnitro

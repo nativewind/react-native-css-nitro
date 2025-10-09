@@ -4,6 +4,7 @@
 #include "Observable.hpp"
 #include "StyleRule+Equality.hpp"
 
+#include <cstddef>
 #include <functional>
 #include <memory>
 #include <mutex>
@@ -14,6 +15,11 @@
 #include <utility>
 #include <variant>
 #include <vector>
+
+namespace reactnativecss {
+    template<typename T>
+    class Computed;
+}
 
 namespace margelo::nitro::cssnitro {
 
@@ -30,35 +36,40 @@ namespace margelo::nitro::cssnitro {
         using PropValue = std::variant<std::string, double, bool>;
         using PropPath = std::vector<std::string>;
         using SelectorAndArgs = std::tuple<std::string, std::vector<std::string>>;
-        using OptionalAnyMap = std::optional<std::shared_ptr<AnyMap>>;
-        using ConfigTuple = std::tuple<std::string, std::vector<std::string>,
-                OptionalAnyMap, std::vector<SelectorAndArgs>>;
+        using ConfigTuple = std::tuple<std::string, std::vector<std::string>, std::vector<SelectorAndArgs>>;
         using TestPropFn = std::function<bool(const PropPath &, const PropValue &)>;
 
         // ----- public API forwarded to Impl -----
-        void registerClassname(const std::string &className,
-                               const StyleRule &styleRule) override {
-            impl_->registerClassname(className, styleRule);
+        void set(const std::string &className,
+                 const StyleRule &styleRule) override {
+            impl_->set(className, styleRule);
         }
 
-        ClassnameData registerComponent(const std::string &componentId,
-                                        const std::string &classNames,
-                                        double variableContext,
-                                        double containerContext,
-                                        const std::vector<ConfigTuple> &configs,
-                                        const TestPropFn &testPropFn) override {
+        std::vector<std::string> registerComponent(const std::string &componentId,
+                                                   const std::string &classNames,
+                                                   const std::string &variableContext,
+                                                   const std::string &containerContext,
+                                                   const std::vector<ConfigTuple> &configs,
+                                                   const TestPropFn &testPropFn) override {
             return impl_->registerComponent(componentId, classNames, variableContext,
-                                            containerContext, configs, testPropFn);
+                                            containerContext, configs,
+                                            testPropFn);
         }
 
-        void unsubscribeComponentRef(double subscriptionId) override {
-            impl_->unsubscribeComponentRef(subscriptionId);
+        void unregisterComponent(const std::string &componentId) override {
+            return impl_->unregisterComponent(componentId);
+
         }
 
-        jsi::Value subscribeComponentRef(jsi::Runtime &runtime,
-                                         const jsi::Value &thisValue,
-                                         const jsi::Value *args, size_t count) {
-            return impl_->subscribeComponentRef(runtime, thisValue, args, count);
+
+        jsi::Value link(jsi::Runtime &runtime,
+                        const jsi::Value &thisValue,
+                        const jsi::Value *args, size_t count) {
+            return impl_->link(runtime, thisValue, args, count);
+        }
+
+        void unlink(double subscriptionId) override {
+            impl_->unlink(subscriptionId);
         }
 
     protected:
@@ -66,8 +77,9 @@ namespace margelo::nitro::cssnitro {
             HybridStyleRegistrySpec::loadHybridMethods();
             registerHybrids(this, [](Prototype &prototype) {
                 prototype.registerRawHybridMethod(
-                        "subscribeComponentRef", 3,
-                        &HybridStyleRegistry::subscribeComponentRef);
+                        "subscribe",
+                        3,
+                        &HybridStyleRegistry::link);
             });
         }
 
@@ -75,24 +87,35 @@ namespace margelo::nitro::cssnitro {
         struct Impl {
             Impl();
 
-            void registerClassname(const std::string &className,
-                                   const StyleRule &styleRule);
+            struct StyleComputedEntry {
+                std::shared_ptr<reactnativecss::Computed<std::vector<std::string>>> computed;
+                std::size_t refCount = 0;
+            };
+
+            void set(const std::string &className, const StyleRule &styleRule);
 
             std::shared_ptr<reactnativecss::Observable<StyleRule>>
             getClassnameObservable(const std::string &className) const;
 
-            ClassnameData registerComponent(const std::string &componentId,
-                                            const std::string &classNames,
-                                            double variableContext,
-                                            double containerContext,
-                                            const std::vector<ConfigTuple> &configs,
-                                            const TestPropFn &testPropFn);
+            std::vector<std::string> registerComponent(const std::string &componentId,
+                                                       const std::string &classNames,
+                                                       const std::string &variableContext,
+                                                       const std::string &containerContext,
+                                                       const std::vector<ConfigTuple> &configs,
+                                                       const TestPropFn &testPropFn);
 
-            void unsubscribeComponentRef(double subscriptionId);
+            void unregisterComponent(const std::string &componentId);
 
-            jsi::Value subscribeComponentRef(jsi::Runtime &runtime,
-                                             const jsi::Value &thisValue,
-                                             const jsi::Value *args, size_t count);
+            StyleComputedEntry &ensureComputedEntry(const std::string &registrationKey,
+                                                    const std::string &classNames);
+
+            void releaseRegistration(const std::string &registrationKey);
+
+            jsi::Value link(jsi::Runtime &runtime,
+                            const jsi::Value &thisValue,
+                            const jsi::Value *args, size_t count);
+
+            void unlink(double subscriptionId);
 
             static std::shared_ptr<Impl> get() {
                 std::call_once(flag_, [] { inst_.reset(new Impl()); });
@@ -105,6 +128,8 @@ namespace margelo::nitro::cssnitro {
             std::unordered_map<std::string,
                     std::shared_ptr<reactnativecss::Observable<StyleRule>>>
                     styleRules_;
+            std::unordered_map<std::string, std::string> component_registration_;
+            std::unordered_map<std::string, StyleComputedEntry> style_computed_;
         };
 
         std::shared_ptr<Impl> impl_;

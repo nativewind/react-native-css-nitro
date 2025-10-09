@@ -11,6 +11,7 @@ public:
     ~HybridMath() override = default;
 
     double add(double a, double b) override {
+        std::cout << "math:" << std::endl;
         return a + b + 3;
     }
 };

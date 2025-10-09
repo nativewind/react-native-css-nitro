@@ -15,7 +15,7 @@
     "Math": {
       "cpp": "HybridMath"
     },
-    "StyleRegistry": {
+    "HybridStyleRegistry": {
       "cpp": "HybridStyleRegistry"
     }
   },

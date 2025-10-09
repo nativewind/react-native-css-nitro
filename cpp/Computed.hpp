@@ -65,6 +65,8 @@ namespace reactnativecss {
         template<class V>
         inline void set(V &&v) { value_->set(std::forward<V>(v)); }
 
+    inline void dispose() noexcept { effect_.dispose(); }
+
     private:
         template<class U>
         explicit Computed(ComputeFn cb, U &&initial)
@@ -98,4 +100,4 @@ namespace reactnativecss {
         }
     };
 
-} // namespace nitro
+} // namespace reactnativecss

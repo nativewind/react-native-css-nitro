@@ -1,70 +1,41 @@
 import { useId, useState, type RefObject } from 'react';
 import { HybridStyleRegistry } from '../specs/StyleRegistry';
-import type {
-  BaseStyleConfig,
-  StyleConfig,
-} from '../specs/StyleRegistry/StyleRegistry.nitro';
-import type { AnyMap } from 'react-native-nitro-modules';
+import type { StyleConfig } from '../specs/StyleRegistry/StyleRegistry.nitro';
 import type { ViewHandle } from '../specs/StyleRegistry/types';
 
-export function useClassnames(
+export function useClassNameMeta(
   classNames: string,
-  variableContext: number,
-  containerContext: number,
-  configs: BaseStyleConfig[] = [],
-  originalProps: Record<string, unknown> = {}
+  variableContext: string,
+  containerContext: string,
+  _originalProps: Record<string, unknown> = {},
+  configs: StyleConfig[] = [['className', ['style'], []]]
 ) {
-  const id = useId();
+  const componentId = useId();
   const [rerender, setState] = useState<() => void>(
     () => () => setState(() => () => undefined)
   );
 
   const data = HybridStyleRegistry.registerComponent(
-    id,
+    componentId,
     classNames,
     variableContext,
     containerContext,
-    configs.map((config) => getStyleConfig(config, originalProps)),
+    configs,
     () => {
       return false;
     }
   );
 
   const ref = (elementRef: RefObject<ViewHandle>) => {
-    const subscriptionId = HybridStyleRegistry.subscribeComponentRef(
-      id,
+    const subscriptionId = HybridStyleRegistry.link(
+      componentId,
       findShadowNodeForHandle(elementRef.current),
       rerender
     );
-    return () => HybridStyleRegistry.unsubscribeComponentRef(subscriptionId);
+    return () => HybridStyleRegistry.unlink(subscriptionId);
   };
 
   return [data, ref];
-}
-
-function getStyleConfig(
-  base: BaseStyleConfig,
-  props: Record<string, unknown> | undefined
-): StyleConfig {
-  const paths = base[1];
-  const lastPath = paths.pop();
-
-  let target: Record<string, unknown> | undefined;
-
-  if (lastPath) {
-    if (props) {
-      target = props;
-      for (const path of paths) {
-        target = target[path] as Record<string, unknown> | undefined;
-        if (!target) {
-          break;
-        }
-      }
-      target = target?.[lastPath] as Record<string, unknown> | undefined;
-    }
-  }
-
-  return [base[0], base[1], target as AnyMap | undefined, base[2]];
 }
 
 function findShadowNodeForHandle(handle: ViewHandle) {
