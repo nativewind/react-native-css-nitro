@@ -5,9 +5,9 @@
 #include <cstdlib>
 #include <string>
 
-#include "../computed.hpp"
-#include "../effect.hpp"
-#include "../observable.hpp"
+#include "../Computed.hpp"
+#include "../Effect.hpp"
+#include "../Observable.hpp"
 
 using nitro::Computed;
 using nitro::Effect;
