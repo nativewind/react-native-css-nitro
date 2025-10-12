@@ -1,12 +1,30 @@
 #include "HybridStyleRegistry.hpp"
 #include "Computed.hpp"
 #include "Observable.hpp"
+#include "ShadowTreeUpdateManager.hpp"
 
 #include <regex>
 #include <string>
 #include <variant>
 #include <vector>
 #include <optional>
+#include <unordered_map>
+#include <mutex>
+
+// New: dynamic payloads (now handled by ShadowTreeUpdateManager)
+#include <folly/dynamic.h>
+
+// React Tag and optional UIManagerBinding (guarded)
+#include <react/renderer/core/ReactPrimitives.h> // facebook::react::Tag
+
+#if __has_include(<react/renderer/uimanager/UIManagerBinding.h>)
+
+#include <react/renderer/uimanager/UIManagerBinding.h>
+
+#define HAS_UIMANAGER_BINDING 1
+#else
+#define HAS_UIMANAGER_BINDING 0
+#endif
 
 namespace margelo::nitro::cssnitro {
 
@@ -36,13 +54,36 @@ namespace margelo::nitro::cssnitro {
 
         void unlinkComponent(const std::string &componentId);
 
-        static std::shared_ptr<Impl> get() {
-            std::call_once(flag_, [] { inst_.reset(new Impl()); });
-            return inst_;
-        }
+    private:
+        // Per-component link info and update source
+        struct ComponentLink {
+            facebook::react::Tag tag{0};
+            jsi::Runtime *runtime{nullptr};
+            std::shared_ptr<reactnativecss::Observable<folly::dynamic>> updates;
+        };
+        // componentId -> {tag, runtime*, updates-observable}
+        std::unordered_map<std::string, ComponentLink> component_linking_;
 
+        // Per-runtime updates observable: Tag -> payload
+        using UpdatesMap = std::unordered_map<facebook::react::Tag, folly::dynamic>;
+        std::unordered_map<jsi::Runtime *, std::shared_ptr<reactnativecss::Observable<UpdatesMap>>> runtime_updates_;
+        // Per-runtime effect (kept alive)
+        std::unordered_map<jsi::Runtime *, std::shared_ptr<reactnativecss::Computed<bool>>> runtime_effects_;
+
+        void ensureRuntimeEffect(jsi::Runtime &runtime);
+
+        void applyUpdates(jsi::Runtime &runtime, const UpdatesMap &updates);
+
+        void addUpdates(const std::string &componentId, const folly::dynamic &payload);
+
+    public:
         static std::once_flag flag_;
         static std::shared_ptr<Impl> inst_;
+
+        static std::shared_ptr<Impl> get();
+
+        // Manager that owns per-runtime effects and updates batching
+        std::unique_ptr<ShadowTreeUpdateManager> shadowUpdates_;
 
         std::unordered_map<std::string, std::shared_ptr<reactnativecss::Computed<Styled>>> computedMap_;
         std::unordered_map<std::string, std::shared_ptr<reactnativecss::Observable<StyleRule>>> styleRuleMap_;
@@ -52,6 +93,11 @@ namespace margelo::nitro::cssnitro {
     // Storage for static members
     std::once_flag HybridStyleRegistry::Impl::flag_;
     std::shared_ptr<HybridStyleRegistry::Impl> HybridStyleRegistry::Impl::inst_;
+
+    std::shared_ptr<HybridStyleRegistry::Impl> HybridStyleRegistry::Impl::get() {
+        std::call_once(flag_, [] { inst_ = std::make_shared<Impl>(); });
+        return inst_;
+    }
 
     // Constructor, Destructor, and Method Implementations
     HybridStyleRegistry::HybridStyleRegistry() : HybridObject("HybridStyleRegistry"),
@@ -110,7 +156,9 @@ namespace margelo::nitro::cssnitro {
 
     // PIMPL Method Implementations
 
-    HybridStyleRegistry::Impl::Impl() = default;
+    HybridStyleRegistry::Impl::Impl() {
+        shadowUpdates_ = std::make_unique<ShadowTreeUpdateManager>();
+    }
 
     void HybridStyleRegistry::Impl::set(const std::string &className,
                                         const StyleRule &styleRule) {
@@ -260,16 +308,35 @@ namespace margelo::nitro::cssnitro {
     jsi::Value HybridStyleRegistry::Impl::linkComponent(
             jsi::Runtime &runtime, const jsi::Value &thisValue, const jsi::Value *args,
             size_t count) {
+        (void) thisValue;
+        if (count < 2) {
+            return jsi::Value::undefined();
+        }
+        // args: [componentId: string, tag: number]
+        if (!args[0].isString() || !args[1].isNumber()) {
+            return jsi::Value::undefined();
+        }
+        std::string componentId = args[0].getString(runtime).utf8(runtime);
+        auto tagValue = static_cast<facebook::react::Tag>(static_cast<int64_t>(args[1].getNumber()));
+
+        // Delegate to manager
+        shadowUpdates_->linkComponent(runtime, componentId, tagValue);
+
         return jsi::Value::undefined();
     }
 
     void HybridStyleRegistry::Impl::unlinkComponent(const std::string &componentId) {
-        // TODO: Implement this
+        shadowUpdates_->unlinkComponent(componentId);
     }
 
-    void HybridStyleRegistry::updateComponentInlineStyleKeys(const std::string &componentId,
-                                                             const std::vector<std::string> &inlineStyleKeys) {
-        // TODO: Implement logic as needed. For now, this is a stub to satisfy the pure virtual requirement.
+    // Update application is handled by ShadowTreeUpdateManager.
+
+    void HybridStyleRegistry::updateComponentInlineStyleKeys(
+            const std::string &componentId,
+            const std::vector<std::string> &inlineStyleKeys) {
+        (void) componentId;
+        (void) inlineStyleKeys;
+        // TODO: Integrate with style computation/ShadowTreeUpdateManager if needed.
     }
 
 } // namespace margelo::nitro::cssnitro
