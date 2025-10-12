@@ -1,6 +1,5 @@
 import { NitroModules } from 'react-native-nitro-modules';
-import type { RawStyleRegistry, StyleRegistry } from './StyleRegistry.nitro';
+import type { HybridStyleRegistry } from './HybridStyleRegistry.nitro';
 
-export const HybridStyleRegistry = NitroModules.createHybridObject<
-  StyleRegistry & RawStyleRegistry
->('HybridStyleRegistry');
+export const StyleRegistry =
+  NitroModules.createHybridObject<HybridStyleRegistry>('HybridStyleRegistry');

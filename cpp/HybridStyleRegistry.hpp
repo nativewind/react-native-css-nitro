@@ -3,6 +3,7 @@
 #include "HybridStyleRegistrySpec.hpp"
 #include "Observable.hpp"
 #include "StyleRule+Equality.hpp"
+#include "Styled+Equality.hpp"
 
 #include <cstddef>
 #include <functional>
@@ -25,12 +26,9 @@ namespace margelo::nitro::cssnitro {
 
     class HybridStyleRegistry : public HybridStyleRegistrySpec {
     public:
-        HybridStyleRegistry()
-                : HybridObject(
-                "HybridStyleRegistry"), // adjust if Spec doesn’t take a name
-                  impl_(Impl::get()) {}
+        HybridStyleRegistry();
 
-        ~HybridStyleRegistry() override = default;
+        ~HybridStyleRegistry() override;
 
         // Shorthand aliases
         using PropValue = std::variant<std::string, double, bool>;
@@ -41,98 +39,37 @@ namespace margelo::nitro::cssnitro {
 
         // ----- public API forwarded to Impl -----
         void set(const std::string &className,
-                 const StyleRule &styleRule) override {
-            impl_->set(className, styleRule);
-        }
+                 const StyleRule &styleRule) override;
 
-        std::vector<std::string> registerComponent(const std::string &componentId,
-                                                   const std::string &classNames,
-                                                   const std::string &variableContext,
-                                                   const std::string &containerContext,
-                                                   const std::vector<ConfigTuple> &configs,
-                                                   const TestPropFn &testPropFn) override {
-            return impl_->registerComponent(componentId, classNames, variableContext,
-                                            containerContext, configs,
-                                            testPropFn);
-        }
+        Declarations getDeclarations(const std::string &componentId, const std::string &classNames,
+                                     const std::string &variableScope,
+                                     const std::string &containerScope) override;
 
-        void unregisterComponent(const std::string &componentId) override {
-            return impl_->unregisterComponent(componentId);
+        Styled
+        registerComponent(const std::string &componentId, const std::function<void()> &rerender,
+                          const std::string &classNames, const std::string &variableScope,
+                          const std::string &containerScope) override;
 
-        }
+        void deregisterComponent(const std::string &componentId) override;
 
+        void updateComponentState(const std::string &componentId,
+                                  UpdateComponentStateFns type) override;
 
-        jsi::Value link(jsi::Runtime &runtime,
-                        const jsi::Value &thisValue,
-                        const jsi::Value *args, size_t count) {
-            return impl_->link(runtime, thisValue, args, count);
-        }
+        void unlinkComponent(const std::string &componentId) override;
 
-        void unlink(double subscriptionId) override {
-            impl_->unlink(subscriptionId);
-        }
+        void updateComponentInlineStyleKeys(const std::string &componentId,
+                                            const std::vector<std::string> &inlineStyleKeys) override;
 
     protected:
-        void loadHybridMethods() override {
-            HybridStyleRegistrySpec::loadHybridMethods();
-            registerHybrids(this, [](Prototype &prototype) {
-                prototype.registerRawHybridMethod(
-                        "subscribe",
-                        3,
-                        &HybridStyleRegistry::link);
-            });
-        }
+        void loadHybridMethods() override;
 
     private:
-        struct Impl {
-            Impl();
-
-            struct StyleComputedEntry {
-                std::shared_ptr<reactnativecss::Computed<std::vector<std::string>>> computed;
-                std::size_t refCount = 0;
-            };
-
-            void set(const std::string &className, const StyleRule &styleRule);
-
-            std::shared_ptr<reactnativecss::Observable<StyleRule>>
-            getClassnameObservable(const std::string &className) const;
-
-            std::vector<std::string> registerComponent(const std::string &componentId,
-                                                       const std::string &classNames,
-                                                       const std::string &variableContext,
-                                                       const std::string &containerContext,
-                                                       const std::vector<ConfigTuple> &configs,
-                                                       const TestPropFn &testPropFn);
-
-            void unregisterComponent(const std::string &componentId);
-
-            StyleComputedEntry &ensureComputedEntry(const std::string &registrationKey,
-                                                    const std::string &classNames);
-
-            void releaseRegistration(const std::string &registrationKey);
-
-            jsi::Value link(jsi::Runtime &runtime,
-                            const jsi::Value &thisValue,
-                            const jsi::Value *args, size_t count);
-
-            void unlink(double subscriptionId);
-
-            static std::shared_ptr<Impl> get() {
-                std::call_once(flag_, [] { inst_.reset(new Impl()); });
-                return inst_;
-            }
-
-            static std::once_flag flag_;
-            static std::shared_ptr<Impl> inst_;
-
-            std::unordered_map<std::string,
-                    std::shared_ptr<reactnativecss::Observable<StyleRule>>>
-                    styleRules_;
-            std::unordered_map<std::string, std::string> component_registration_;
-            std::unordered_map<std::string, StyleComputedEntry> style_computed_;
-        };
-
+        struct Impl;
         std::shared_ptr<Impl> impl_;
+
+        jsi::Value linkComponent(jsi::Runtime &runtime,
+                                 const jsi::Value &thisValue,
+                                 const jsi::Value *args, size_t count);
     };
 
 } // namespace margelo::nitro::cssnitro

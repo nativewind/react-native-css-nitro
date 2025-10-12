@@ -1,9 +1,18 @@
+import { useId } from 'react';
 import { Text, View, StyleSheet } from 'react-native';
-import { multiply, add, useClassNameMeta } from 'react-native-css-nitro';
+import {
+  multiply,
+  add,
+  useStyled,
+  StyleRegistry,
+} from 'react-native-css-nitro';
+
+StyleRegistry.set('text-red-500', { s: [], d: [{ color: 'red' }] });
 
 export default function App() {
   console.log('App rendered');
-  console.log(useClassNameMeta('text-red-500', '0', '0'));
+  const componentId = useId();
+  console.log(useStyled(componentId, 'text-red-500', {}));
   return (
     <View style={styles.container}>
       <Text>Multiply: {multiply(3, 7)}</Text>
