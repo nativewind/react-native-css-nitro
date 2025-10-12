@@ -319,7 +319,6 @@ namespace margelo::nitro::cssnitro {
         std::string componentId = args[0].getString(runtime).utf8(runtime);
         auto tagValue = static_cast<facebook::react::Tag>(static_cast<int64_t>(args[1].getNumber()));
 
-        // Delegate to manager
         shadowUpdates_->linkComponent(runtime, componentId, tagValue);
 
         return jsi::Value::undefined();

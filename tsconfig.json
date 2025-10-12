@@ -4,6 +4,9 @@
     "paths": {
       "react-native-css-nitro": [
         "./src/index"
+      ],
+      "react-native-css-nitro/components/*": [
+        "./src/components/*/index"
       ]
     },
     "allowUnreachableCode": false,

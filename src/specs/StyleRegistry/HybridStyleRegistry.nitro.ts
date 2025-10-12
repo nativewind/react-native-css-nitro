@@ -1,5 +1,4 @@
 import type { AnyMap, HybridObject } from 'react-native-nitro-modules';
-import type { ShadowNode } from './types';
 
 export type HybridStyleRegistry = StyleRegistry & RawStyleRegistry;
 
@@ -35,7 +34,7 @@ export interface StyleRegistry
  * The raw JSI methods for StyleRegistry
  */
 export interface RawStyleRegistry {
-  linkComponent(componentId: string, shadowNode: ShadowNode): void;
+  linkComponent(componentId: string, tag: number): void;
 }
 
 export type Declarations = {
