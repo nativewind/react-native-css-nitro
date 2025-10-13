@@ -34,8 +34,6 @@ namespace margelo::nitro::cssnitro {
         using PropValue = std::variant<std::string, double, bool>;
         using PropPath = std::vector<std::string>;
         using SelectorAndArgs = std::tuple<std::string, std::vector<std::string>>;
-        using ConfigTuple = std::tuple<std::string, std::vector<std::string>, std::vector<SelectorAndArgs>>;
-        using TestPropFn = std::function<bool(const PropPath &, const PropValue &)>;
 
         // ----- public API forwarded to Impl -----
         void set(const std::string &className,
@@ -70,6 +68,10 @@ namespace margelo::nitro::cssnitro {
         jsi::Value linkComponent(jsi::Runtime &runtime,
                                  const jsi::Value &thisValue,
                                  const jsi::Value *args, size_t count);
+
+        jsi::Value registerExternalMethods(jsi::Runtime &runtime,
+                                           const jsi::Value &thisValue,
+                                           const jsi::Value *args, size_t count);
     };
 
 } // namespace margelo::nitro::cssnitro

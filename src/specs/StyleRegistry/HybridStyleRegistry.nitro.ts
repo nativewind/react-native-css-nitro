@@ -1,3 +1,4 @@
+import type { processColor } from 'react-native';
 import type { AnyMap, HybridObject } from 'react-native-nitro-modules';
 
 export type HybridStyleRegistry = StyleRegistry & RawStyleRegistry;
@@ -28,6 +29,14 @@ export interface StyleRegistry
     type: UpdateComponentStateFns
   ): void;
   unlinkComponent(componentId: string): void;
+
+  /** Computed values */
+  setWindowDimensions(
+    width: number,
+    height: number,
+    scale: number,
+    fontScale: number
+  ): void;
 }
 
 /**
@@ -35,6 +44,7 @@ export interface StyleRegistry
  */
 export interface RawStyleRegistry {
   linkComponent(componentId: string, tag: number): void;
+  registerExternalMethods(options: { processColor: typeof processColor }): void;
 }
 
 export type Declarations = {

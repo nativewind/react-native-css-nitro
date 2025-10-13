@@ -1,6 +1,7 @@
 #include "HybridStyleRegistry.hpp"
 #include "Computed.hpp"
 #include "Observable.hpp"
+#include "Helpers.hpp"
 #include "ShadowTreeUpdateManager.hpp"
 #include "StyledComputedFactory.hpp"
 
@@ -55,6 +56,10 @@ namespace margelo::nitro::cssnitro {
 
         void unlinkComponent(const std::string &componentId);
 
+        jsi::Value registerExternalMethods(jsi::Runtime &runtime,
+                                           const jsi::Value &thisValue,
+                                           const jsi::Value *args, size_t count);
+
     private:
         // Per-component link info and update source
         struct ComponentLink {
@@ -71,18 +76,13 @@ namespace margelo::nitro::cssnitro {
         // Per-runtime effect (kept alive)
         std::unordered_map<jsi::Runtime *, std::shared_ptr<reactnativecss::Computed<bool>>> runtime_effects_;
 
-        void ensureRuntimeEffect(jsi::Runtime &runtime);
-
-        void applyUpdates(jsi::Runtime &runtime, const UpdatesMap &updates);
-
-        void addUpdates(const std::string &componentId, const folly::dynamic &payload);
-
     public:
         static std::once_flag flag_;
         static std::shared_ptr<Impl> inst_;
 
         static std::shared_ptr<Impl> get();
 
+    private:
         // Manager that owns per-runtime effects and updates batching
         std::unique_ptr<ShadowTreeUpdateManager> shadowUpdates_;
 
@@ -145,6 +145,12 @@ namespace margelo::nitro::cssnitro {
         return impl_->linkComponent(runtime, thisValue, args, count);
     }
 
+    jsi::Value
+    HybridStyleRegistry::registerExternalMethods(jsi::Runtime &runtime, const jsi::Value &thisValue,
+                                                 const jsi::Value *args, size_t count) {
+        return impl_->registerExternalMethods(runtime, thisValue, args, count);
+    }
+
     void HybridStyleRegistry::loadHybridMethods() {
         HybridStyleRegistrySpec::loadHybridMethods();
         registerHybrids(this, [](Prototype &prototype) {
@@ -152,6 +158,11 @@ namespace margelo::nitro::cssnitro {
                     "linkComponent",
                     2,
                     &HybridStyleRegistry::linkComponent);
+
+            prototype.registerRawHybridMethod(
+                    "registerExternalMethods",
+                    1,
+                    &HybridStyleRegistry::registerExternalMethods);
         });
     }
 
@@ -268,7 +279,25 @@ namespace margelo::nitro::cssnitro {
         shadowUpdates_->unlinkComponent(componentId);
     }
 
-    // Update application is handled by ShadowTreeUpdateManager.
+    jsi::Value HybridStyleRegistry::Impl::registerExternalMethods(
+            jsi::Runtime &runtime, const jsi::Value &thisValue, const jsi::Value *args,
+            size_t count) {
+        (void) thisValue;
+
+        if (!args[0].isObject()) {
+            return jsi::Value::undefined();
+        }
+
+        /** processColor **/
+        auto maybeProcessColorFn = args[0].asObject(runtime).getProperty(runtime, "processColor");
+        helpers::assertThat(runtime, maybeProcessColorFn.isObject(),
+                            "react-native-css: Can't load processColor function from JS.");
+        jsi::Function processColorFn = maybeProcessColorFn.asObject(runtime).asFunction(runtime);
+
+        shadowUpdates_->registerProcessColorFunction(std::move(processColorFn));
+
+        return jsi::Value::undefined();
+    }
 
     void HybridStyleRegistry::updateComponentInlineStyleKeys(
             const std::string &componentId,

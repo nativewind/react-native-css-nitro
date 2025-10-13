@@ -1,7 +1,6 @@
 #include "StyledComputedFactory.hpp"
 #include "Styled+Equality.hpp"
 #include "ShadowTreeUpdateManager.hpp"
-#include "AnyToDynamic.hpp"
 
 #include <regex>
 #include <variant>
@@ -13,10 +12,6 @@
 namespace margelo::nitro::cssnitro {
 
     using AnyMap = ::margelo::nitro::AnyMap;
-    using AnyValue = ::margelo::nitro::AnyValue;
-    using AnyArray = ::margelo::nitro::AnyArray;
-    using AnyObject = ::margelo::nitro::AnyObject;
-    using VariantType = ::margelo::nitro::VariantType;
 
     std::shared_ptr<reactnativecss::Computed<Styled>> makeStyledComputed(
             const std::unordered_map<std::string, std::shared_ptr<reactnativecss::Observable<StyleRule>>> &styleRuleMap,
@@ -82,9 +77,9 @@ namespace margelo::nitro::cssnitro {
                         next.style = std::move(styleEntries);
                     }
 
-                    // Notify ShadowTreeUpdateManager with the value of next.style as a folly::dynamic array.
+                    // Notify ShadowTreeUpdateManager with the resolved style entries
                     if (next.style.has_value()) {
-                        shadowUpdates.addUpdates(componentId, toDynamic(*next.style));
+                        shadowUpdates.addUpdates(componentId, next.style.value());
                     }
 
                     return next;
