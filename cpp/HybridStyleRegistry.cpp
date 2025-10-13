@@ -4,6 +4,7 @@
 #include "Helpers.hpp"
 #include "ShadowTreeUpdateManager.hpp"
 #include "StyledComputedFactory.hpp"
+#include "Environment.hpp"
 
 #include <regex>
 #include <string>
@@ -52,6 +53,8 @@ namespace margelo::nitro::cssnitro {
                                            const jsi::Value &thisValue,
                                            const jsi::Value *args, size_t count);
 
+        void setWindowDimensions(double width, double height, double scale, double fontScale);
+
     private:
         // Per-component link info and update source
         struct ComponentLink {
@@ -59,13 +62,10 @@ namespace margelo::nitro::cssnitro {
             jsi::Runtime *runtime{nullptr};
             std::shared_ptr<reactnativecss::Observable<folly::dynamic>> updates;
         };
-        // componentId -> {tag, runtime*, updates-observable}
-        std::unordered_map<std::string, ComponentLink> component_linking_;
 
-        // Per-runtime updates observable: Tag -> payload
+        std::unordered_map<std::string, ComponentLink> component_linking_;
         using UpdatesMap = std::unordered_map<facebook::react::Tag, folly::dynamic>;
         std::unordered_map<jsi::Runtime *, std::shared_ptr<reactnativecss::Observable<UpdatesMap>>> runtime_updates_;
-        // Per-runtime effect (kept alive)
         std::unordered_map<jsi::Runtime *, std::shared_ptr<reactnativecss::Computed<bool>>> runtime_effects_;
 
     public:
@@ -75,9 +75,7 @@ namespace margelo::nitro::cssnitro {
         static std::shared_ptr<Impl> get();
 
     private:
-        // Manager that owns per-runtime effects and updates batching
         std::unique_ptr<ShadowTreeUpdateManager> shadowUpdates_;
-
         std::unordered_map<std::string, std::shared_ptr<reactnativecss::Computed<Styled>>> computedMap_;
         std::unordered_map<std::string, std::shared_ptr<reactnativecss::Observable<StyleRule>>> styleRuleMap_;
     };
@@ -129,6 +127,11 @@ namespace margelo::nitro::cssnitro {
 
     void HybridStyleRegistry::unlinkComponent(const std::string &componentId) {
         impl_->unlinkComponent(componentId);
+    }
+
+    void HybridStyleRegistry::setWindowDimensions(double width, double height, double scale,
+                                                  double fontScale) {
+        impl_->setWindowDimensions(width, height, scale, fontScale);
     }
 
     jsi::Value
@@ -269,6 +272,11 @@ namespace margelo::nitro::cssnitro {
 
     void HybridStyleRegistry::Impl::unlinkComponent(const std::string &componentId) {
         shadowUpdates_->unlinkComponent(componentId);
+    }
+
+    void HybridStyleRegistry::Impl::setWindowDimensions(double width, double height, double scale,
+                                                        double fontScale) {
+        reactnativecss::env::setWindowDimensions(width, height, scale, fontScale);
     }
 
     jsi::Value HybridStyleRegistry::Impl::registerExternalMethods(

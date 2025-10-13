@@ -58,6 +58,9 @@ namespace margelo::nitro::cssnitro {
         void updateComponentInlineStyleKeys(const std::string &componentId,
                                             const std::vector<std::string> &inlineStyleKeys) override;
 
+        void
+        setWindowDimensions(double width, double height, double scale, double fontScale) override;
+
     protected:
         void loadHybridMethods() override;
 

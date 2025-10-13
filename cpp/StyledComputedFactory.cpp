@@ -1,6 +1,7 @@
 #include "StyledComputedFactory.hpp"
 #include "Styled+Equality.hpp"
 #include "ShadowTreeUpdateManager.hpp"
+#include "Rules.hpp"
 
 #include <regex>
 #include <variant>
@@ -43,6 +44,11 @@ namespace margelo::nitro::cssnitro {
                         }
 
                         const StyleRule &styleRule = get(*styleIt->second);
+
+                        // Skip rule if its media conditions don't pass
+                        if (!Rules::testRule(styleRule, get)) {
+                            continue;
+                        }
 
                         if (styleRule.d.has_value()) {
                             std::vector<std::variant<std::shared_ptr<AnyMap>, std::vector<std::shared_ptr<AnyMap>>>> stack(
