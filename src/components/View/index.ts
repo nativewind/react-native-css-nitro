@@ -1,4 +1,4 @@
-import { View } from '../View.native';
-export * from '../View.native';
+import { View } from './View';
+export * from './View';
 
 export default View;

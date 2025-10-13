@@ -1,9 +1,9 @@
 import { View as RNView, type ViewProps } from 'react-native';
-import { copyComponentProperties, getDeepKeys } from '../utils';
-import { useStyled } from '../native/useStyled';
+import { copyComponentProperties, getDeepKeys } from '../../utils';
+import { useStyled } from '../../native/useStyled';
 import { useId } from 'react';
-import { useRef } from '../native/useRef';
-import { StyleRegistry } from '../specs/StyleRegistry';
+import { useRef } from '../../native/useRef';
+import { StyleRegistry } from '../../specs/StyleRegistry';
 
 export const View = copyComponentProperties(RNView, (props: ViewProps) => {
   const componentId = useId();
