@@ -13,6 +13,7 @@
 #include <string>
 #include <cctype>
 #include <react/renderer/uimanager/UIManagerBinding.h>
+#include <cassert>
 
 namespace margelo::nitro::cssnitro {
 
@@ -20,8 +21,11 @@ namespace margelo::nitro::cssnitro {
     using reactnativecss::Observable;
     namespace nitro_ns = ::margelo::nitro;
 
-    namespace {
-        bool containsColorInsensitive(const std::string &key) {
+    ShadowTreeUpdateManager::ShadowTreeUpdateManager() = default;
+
+    struct VariantConverter {
+    private:
+        static bool containsColorInsensitive(const std::string &key) {
             if (key.size() < 5) return false;
             std::string lower;
             lower.reserve(key.size());
@@ -30,9 +34,8 @@ namespace margelo::nitro::cssnitro {
                         static_cast<char>(::tolower(static_cast<unsigned char>(c))));
             return lower.find("color") != std::string::npos;
         }
-    }
 
-    struct VariantConverter {
+    public:
         static folly::dynamic convert(ShadowTreeUpdateManager &self,
                                       Runtime &runtime,
                                       const nitro_ns::VariantType &var) {
@@ -72,26 +75,25 @@ namespace margelo::nitro::cssnitro {
                     },
                     var);
         }
-    };
 
-    // Convert a single style entry (AnyMap) into an update object, applying color processing only for keys containing "color"
-    folly::dynamic ShadowTreeUpdateManager::styleEntryToUpdate(Runtime &runtime,
-                                                               const nitro_ns::AnyMap &entry) {
-        folly::dynamic obj = folly::dynamic::object();
-        const auto &map = entry.getMap();
-        for (const auto &kv: map) {
-            const auto &var = static_cast<const nitro_ns::VariantType &>(kv.second);
-            auto dynVal = VariantConverter::convert(*this, runtime, var);
-            if (containsColorInsensitive(kv.first)) {
-                obj[kv.first] = processColorDynamic(runtime, dynVal);
-            } else {
-                obj[kv.first] = std::move(dynVal);
+        // Overload: convert an AnyMap directly (top-level style entry)
+        static folly::dynamic convert(ShadowTreeUpdateManager &self,
+                                      Runtime &runtime,
+                                      const nitro_ns::AnyMap &entry) {
+            folly::dynamic obj = folly::dynamic::object();
+            // Iterate key-value pairs from AnyMap
+            for (const auto &kv: entry.getMap()) {
+                const auto &v = static_cast<const nitro_ns::VariantType &>(kv.second);
+                auto dynVal = convert(self, runtime, v);
+                if (containsColorInsensitive(kv.first)) {
+                    obj[kv.first] = self.processColorDynamic(runtime, dynVal);
+                } else {
+                    obj[kv.first] = std::move(dynVal);
+                }
             }
+            return obj;
         }
-        return obj;
-    }
-
-    ShadowTreeUpdateManager::ShadowTreeUpdateManager() = default;
+    };
 
     void ShadowTreeUpdateManager::linkComponent(Runtime &runtime,
                                                 const std::string &componentId,
@@ -125,7 +127,7 @@ namespace margelo::nitro::cssnitro {
             if (!p) {
                 continue;
             }
-            auto obj = styleEntryToUpdate(*link.runtime, *p);
+            auto obj = VariantConverter::convert(*this, *link.runtime, *p);
             if (obj.isObject()) {
                 for (auto &kv: obj.items()) {
                     payload[kv.first] = std::move(kv.second);

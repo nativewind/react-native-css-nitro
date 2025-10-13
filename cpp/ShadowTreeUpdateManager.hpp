@@ -76,9 +76,7 @@ namespace margelo {
                 folly::dynamic
                 processColorDynamic(jsi::Runtime &runtime, const folly::dynamic &value);
 
-                // Convert a single style entry (AnyMap) into an update object, applying color processing to string values for keys containing "color"
-                folly::dynamic
-                styleEntryToUpdate(jsi::Runtime &runtime, const ::margelo::nitro::AnyMap &entry);
+                // styleEntryToUpdate was inlined into addUpdates
             };
 
         }
