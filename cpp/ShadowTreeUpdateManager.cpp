@@ -16,7 +16,6 @@
 #include <cassert>
 
 namespace margelo::nitro::cssnitro {
-
     using jsi::Runtime;
     using reactnativecss::Observable;
     namespace nitro_ns = ::margelo::nitro;
@@ -81,7 +80,6 @@ namespace margelo::nitro::cssnitro {
                                       Runtime &runtime,
                                       const nitro_ns::AnyMap &entry) {
             folly::dynamic obj = folly::dynamic::object();
-            // Iterate key-value pairs from AnyMap
             for (const auto &kv: entry.getMap()) {
                 const auto &v = static_cast<const nitro_ns::VariantType &>(kv.second);
                 auto dynVal = convert(self, runtime, v);
@@ -121,7 +119,6 @@ namespace margelo::nitro::cssnitro {
             obs = Observable<UpdatesMap>::create(UpdatesMap{});
         }
 
-        // Convert each style entry into a dynamic update object (merged into a single object per tag)
         folly::dynamic payload = folly::dynamic::object();
         for (const auto &p: styleEntries) {
             if (!p) {
@@ -154,17 +151,19 @@ namespace margelo::nitro::cssnitro {
         }
         if (runtime_effects_.find(rt) == runtime_effects_.end()) {
             auto obs = rtObsIt->second;
-            auto holder = std::make_shared<RuntimeEffectHolder>();
-            holder->effect = std::make_shared<reactnativecss::Effect>(
-                    [obs, rt, holder]() {
-                        const ShadowTreeUpdateManager::UpdatesMap &updates = obs->get(
-                                *holder->effect);
+            auto weakBox = std::make_shared<std::weak_ptr<reactnativecss::Effect>>();
+            auto effect = std::make_shared<reactnativecss::Effect>(
+                    [obs, rt, weakBox]() {
+                        auto eff = weakBox->lock();
+                        if (!eff) return;
+                        const ShadowTreeUpdateManager::UpdatesMap &updates = obs->get(*eff);
                         if (updates.empty()) return;
                         ShadowTreeUpdateManager::applyUpdates(*rt, updates);
                         obs->set(ShadowTreeUpdateManager::UpdatesMap{});
                     });
-            holder->effect->run();
-            runtime_effects_.emplace(rt, std::move(holder));
+            *weakBox = effect;
+            effect->run();
+            runtime_effects_.emplace(rt, std::move(effect));
         }
     }
 

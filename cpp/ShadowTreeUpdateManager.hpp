@@ -6,79 +6,71 @@
 #include <vector>
 
 #include <folly/dynamic.h>
-#include <react/renderer/core/ReactPrimitives.h> // facebook::react::Tag
-#include <jsi/jsi.h>
+#include <react/renderer/core/ReactPrimitives.h>
 
-#include "Observable.hpp"
-#include "Effect.hpp"
+namespace facebook::jsi {
+    class Runtime;
 
-// Forward declarations for Nitro Any types
-namespace margelo {
-    namespace nitro {
-        class AnyMap;
-    }
+    class Function;
 }
 
-// Provide a convenient alias matching React Native's JSI namespace
+namespace reactnativecss {
+    template<typename T>
+    class Observable;
+
+    class Effect;
+}
+
+namespace margelo::nitro { class AnyMap; }
+
 namespace jsi = facebook::jsi;
 
-namespace margelo {
-    namespace nitro {
-        namespace cssnitro {
+namespace margelo::nitro::cssnitro {
 
-            struct VariantConverter; // forward decl for friend
+    struct VariantConverter;
 
-            class ShadowTreeUpdateManager final {
-            public:
-                using UpdatesMap = std::unordered_map<facebook::react::Tag, folly::dynamic>;
+    class ShadowTreeUpdateManager final {
+    public:
+        using UpdatesMap = std::unordered_map<facebook::react::Tag, folly::dynamic>;
 
-                ShadowTreeUpdateManager();
+        ShadowTreeUpdateManager();
 
-                void linkComponent(jsi::Runtime &runtime,
-                                   const std::string &componentId,
-                                   facebook::react::Tag tag);
+        void linkComponent(jsi::Runtime &runtime,
+                           const std::string &componentId,
+                           facebook::react::Tag tag);
 
-                void unlinkComponent(const std::string &componentId);
+        void unlinkComponent(const std::string &componentId);
 
-                // Accept the style entries from Styled.next.style and convert internally
-                void addUpdates(const std::string &componentId,
-                                const std::vector<std::shared_ptr<::margelo::nitro::AnyMap>> &styleEntries);
+        void addUpdates(const std::string &componentId,
+                        const std::vector<std::shared_ptr<::margelo::nitro::AnyMap>> &styleEntries);
 
-                void registerProcessColorFunction(jsi::Function &&fn);
+        void registerProcessColorFunction(jsi::Function &&fn);
 
-            private:
-                friend struct VariantConverter;
-                struct ComponentLink {
-                    facebook::react::Tag tag{0};
-                    jsi::Runtime *runtime{nullptr};
-                };
+    private:
+        friend struct VariantConverter;
+        struct ComponentLink {
+            facebook::react::Tag tag{0};
+            jsi::Runtime *runtime{nullptr};
+        };
 
-                std::shared_ptr<jsi::Function> process_color_;
-                // Cache for processed color strings -> int result
-                std::unordered_map<std::string, int> process_color_cache_;
+        std::shared_ptr<jsi::Function> process_color_;
+        std::unordered_map<std::string, int> process_color_cache_;
 
-                // componentId -> {tag, runtime*}
-                std::unordered_map<std::string, ComponentLink> component_links_;
+        std::unordered_map<std::string, ComponentLink> component_links_;
 
-                // Per-runtime updates observable/effect
-                std::unordered_map<jsi::Runtime *, std::shared_ptr<reactnativecss::Observable<UpdatesMap>>> runtime_updates_;
+        std::unordered_map<jsi::Runtime *, std::shared_ptr<reactnativecss::Observable<UpdatesMap>>> runtime_updates_;
 
-                struct RuntimeEffectHolder {
-                    std::shared_ptr<reactnativecss::Effect> effect;
-                };
-                std::unordered_map<jsi::Runtime *, std::shared_ptr<RuntimeEffectHolder>> runtime_effects_;
+        // Keep one effect per runtime
+        std::unordered_map<jsi::Runtime *, std::shared_ptr<reactnativecss::Effect>> runtime_effects_;
 
-                void ensureRuntimeEffect(jsi::Runtime &runtime);
+        void ensureRuntimeEffect(jsi::Runtime &runtime);
 
-                static void applyUpdates(jsi::Runtime &runtime, const UpdatesMap &updates);
+        static void applyUpdates(jsi::Runtime &runtime, const UpdatesMap &updates);
 
-                // String color processing (with caching)
-                folly::dynamic
-                processColorDynamic(jsi::Runtime &runtime, const folly::dynamic &value);
+        // String color processing (with caching)
+        folly::dynamic
+        processColorDynamic(jsi::Runtime &runtime, const folly::dynamic &value);
 
-                // styleEntryToUpdate was inlined into addUpdates
-            };
-
-        }
-    }
+        // styleEntryToUpdate was inlined into addUpdates
+    };
 } // namespace margelo::nitro::cssnitro
