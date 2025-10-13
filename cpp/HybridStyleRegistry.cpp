@@ -2,6 +2,7 @@
 #include "Computed.hpp"
 #include "Observable.hpp"
 #include "ShadowTreeUpdateManager.hpp"
+#include "StyledComputedFactory.hpp"
 
 #include <regex>
 #include <string>
@@ -220,69 +221,8 @@ namespace margelo::nitro::cssnitro {
 
         (void) rerender;
 
-        auto computed = reactnativecss::Computed<Styled>::create(
-                [this, classNames](const Styled &prev,
-                                   typename reactnativecss::Computed<Styled>::GetProxy &get) {
-                    (void) prev;
-
-                    Styled next{};
-                    std::vector<std::shared_ptr<AnyMap>> styleEntries;
-
-                    std::regex whitespace{"\\s+"};
-                    std::sregex_token_iterator tokenIt(classNames.begin(), classNames.end(),
-                                                       whitespace, -1);
-                    std::sregex_token_iterator end;
-
-                    for (; tokenIt != end; ++tokenIt) {
-                        const std::string className = tokenIt->str();
-                        if (className.empty()) {
-                            continue;
-                        }
-
-                        auto styleIt = styleRuleMap_.find(className);
-                        if (styleIt == styleRuleMap_.end() || !styleIt->second) {
-                            continue;
-                        }
-
-                        const StyleRule &styleRule = get(*styleIt->second);
-
-                        if (styleRule.d.has_value()) {
-                            std::vector<std::variant<std::shared_ptr<AnyMap>, std::vector<std::shared_ptr<AnyMap>>>> stack(
-                                    styleRule.d->begin(), styleRule.d->end());
-
-                            while (!stack.empty()) {
-                                auto current = std::move(stack.back());
-                                stack.pop_back();
-
-                                std::visit(
-                                        [&stack, &styleEntries](auto &&value) {
-                                            using ValueType = std::decay_t<decltype(value)>;
-
-                                            if constexpr (std::is_same_v<ValueType, std::shared_ptr<AnyMap>>) {
-                                                if (value) {
-                                                    styleEntries.push_back(value);
-                                                }
-                                            } else if constexpr (std::is_same_v<ValueType, std::vector<std::shared_ptr<AnyMap>>>) {
-                                                for (const auto &nested: value) {
-                                                    if (nested) {
-                                                        stack.emplace_back(nested);
-                                                    }
-                                                }
-                                            }
-                                        },
-                                        current);
-                            }
-                        }
-                    }
-
-                    if (!styleEntries.empty()) {
-                        next.style = std::move(styleEntries);
-                    }
-
-                    return next;
-                },
-                Styled{}
-        );
+        // Build computed Styled via factory
+        auto computed = makeStyledComputed(styleRuleMap_, classNames, componentId, *shadowUpdates_);
 
         computedMap_[componentId] = computed;
 

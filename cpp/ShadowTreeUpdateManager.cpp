@@ -2,6 +2,7 @@
 
 #include "Observable.hpp"
 #include "Computed.hpp"
+#include "Effect.hpp"
 
 #include <jsi/jsi.h>
 #include <folly/dynamic.h>
@@ -64,19 +65,19 @@ namespace margelo {
                 }
                 if (runtime_effects_.find(rt) == runtime_effects_.end()) {
                     auto obs = rtObsIt->second;
-                    auto effect = Computed<bool>::create(
-                            [this, obs, rt](const bool &prev,
-                                            Computed<bool>::GetProxy &get) -> bool {
-                                (void) prev;
-                                const UpdatesMap &updates = get(*obs);
-                                if (updates.empty()) return false;
+                    // Holder so the effect can reference itself for subscription
+                    auto holder = std::make_shared<RuntimeEffectHolder>();
+                    holder->effect = std::make_shared<reactnativecss::Effect>(
+                            [this, obs, rt, holder]() {
+                                // Subscribe to obs with this effect instance to re-run on changes
+                                const UpdatesMap &updates = obs->get(*holder->effect);
+                                if (updates.empty()) return;
                                 applyUpdates(*rt, updates);
                                 obs->set(UpdatesMap{});
-                                return true;
-                            },
-                            false
-                    );
-                    runtime_effects_.emplace(rt, std::move(effect));
+                            });
+                    // Initial run to establish subscription
+                    holder->effect->run();
+                    runtime_effects_.emplace(rt, std::move(holder));
                 }
             }
 
@@ -96,4 +97,3 @@ namespace margelo {
         }
     }
 } // namespace margelo::nitro::cssnitro
-

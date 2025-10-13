@@ -10,6 +10,7 @@
 
 #include "Observable.hpp"
 #include "Computed.hpp"
+#include "Effect.hpp"
 
 // Provide a convenient alias matching React Native's JSI namespace
 namespace jsi = facebook::jsi;
@@ -43,7 +44,11 @@ namespace margelo {
 
                 // Per-runtime updates observable/effect
                 std::unordered_map<jsi::Runtime *, std::shared_ptr<reactnativecss::Observable<UpdatesMap>>> runtime_updates_;
-                std::unordered_map<jsi::Runtime *, std::shared_ptr<reactnativecss::Computed<bool>>> runtime_effects_;
+
+                struct RuntimeEffectHolder {
+                    std::shared_ptr<reactnativecss::Effect> effect;
+                };
+                std::unordered_map<jsi::Runtime *, std::shared_ptr<RuntimeEffectHolder>> runtime_effects_;
 
                 void ensureRuntimeEffect(jsi::Runtime &runtime);
 
