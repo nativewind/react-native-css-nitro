@@ -1,8 +1,9 @@
-import { View, StyleSheet } from 'react-native';
-import { multiply, StyleRegistry } from 'react-native-css-nitro';
-import { Text } from 'react-native-css-nitro/components/Text';
+import { StyleSheet, View } from "react-native";
 
-StyleRegistry.set('text-red-500', { s: [], d: [{ color: 'red' }] });
+import { multiply, StyleRegistry } from "react-native-css-nitro";
+import { Text } from "react-native-css-nitro/components/Text";
+
+StyleRegistry.set("text-red-500", { s: [], d: [{ color: "red" }] });
 
 export default function App() {
   return (
@@ -10,10 +11,10 @@ export default function App() {
       <Text
         className="text-red-500"
         onPress={() => {
-          console.log('Pressed!');
-          StyleRegistry.set('text-red-500', {
+          console.log("Pressed!");
+          StyleRegistry.set("text-red-500", {
             s: [],
-            d: [{ color: 'blue', fontSize: 40 }],
+            d: [{ color: "blue", fontSize: 40 }],
           });
         }}
       >
@@ -26,7 +27,7 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
 });

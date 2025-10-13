@@ -1,29 +1,75 @@
-import { fixupConfigRules } from '@eslint/compat';
-import { FlatCompat } from '@eslint/eslintrc';
-import js from '@eslint/js';
-import prettier from 'eslint-plugin-prettier';
-import { defineConfig } from 'eslint/config';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { resolve } from "node:path";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const compat = new FlatCompat({
-  baseDirectory: __dirname,
-  recommendedConfig: js.configs.recommended,
-  allConfig: js.configs.all,
-});
+import eslint from "@eslint/js";
+import prettier from "eslint-plugin-prettier/recommended";
+import { globalIgnores } from "eslint/config";
+import tseslint from "typescript-eslint";
 
-export default defineConfig([
+export default tseslint.config(
+  eslint.configs.recommended,
+  tseslint.configs.strictTypeChecked,
+  tseslint.configs.stylisticTypeChecked,
+  prettier,
   {
-    extends: fixupConfigRules(compat.extends('@react-native', 'prettier')),
-    plugins: { prettier },
-    rules: {
-      'react/react-in-jsx-scope': 'off',
-      'prettier/prettier': 'error',
+    languageOptions: {
+      parserOptions: {
+        projectService: true,
+        tsconfigRootDir: resolve("../"),
+      },
     },
   },
+  globalIgnores([
+    "**/dist/*",
+    ".yarn/*",
+    "**/eslint.config.[cm]js",
+    "**/prettier.config.[cm]js",
+    "**/babel.config.js",
+    "**/metro.config.js",
+  ]),
   {
-    ignores: ['node_modules/', 'lib/'],
+    rules: {
+      "prefer-const": [
+        "error",
+        {
+          destructuring: "all",
+        },
+      ],
+      "no-unused-vars": "off",
+      "@typescript-eslint/no-unsafe-assignment": "off",
+      "@typescript-eslint/no-explicit-any": "off",
+      "@typescript-eslint/no-unsafe-call": "off",
+      "@typescript-eslint/no-unsafe-return": "off",
+      "@typescript-eslint/no-unsafe-member-access": "off",
+      "@typescript-eslint/no-unsafe-member-access": "off",
+      "@typescript-eslint/no-unsafe-argument": "off",
+      "@typescript-eslint/no-unused-vars": [
+        "warn",
+        {
+          args: "after-used",
+          ignoreRestSiblings: true,
+          argsIgnorePattern: "^_",
+        },
+      ],
+      "@typescript-eslint/restrict-template-expressions": [
+        "error",
+        {
+          allow: [{ name: ["Error", "URL", "URLSearchParams"], from: "lib" }],
+          allowAny: true,
+          allowBoolean: true,
+          allowNullish: true,
+          allowNumber: true,
+          allowRegExp: true,
+        },
+      ],
+    },
   },
-]);
+  // Test file specific rules
+  // These rules are causing false positives with @react-native/testing-library
+  {
+    files: ["**/__tests__/**/*", "**/*.test.*", "**/*.spec.*"],
+    rules: {
+      "@typescript-eslint/no-unsafe-assignment": "off",
+      "@typescript-eslint/no-unsafe-member-access": "off",
+    },
+  },
+);

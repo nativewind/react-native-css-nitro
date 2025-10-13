@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo } from "react";
 
 export function useStyled(className?: string, style?: any): any {
   return useMemo(() => {

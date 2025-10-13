@@ -73,8 +73,10 @@
     "@eslint/eslintrc": "^3.3.1",
     "@eslint/js": "^9.35.0",
     "@evilmartians/lefthook": "^1.12.3",
+    "@ianvs/prettier-plugin-sort-imports": "^4.7.0",
     "@react-native/babel-preset": "0.81.1",
     "@react-native/eslint-config": "^0.81.1",
+    "@react-native/typescript-config": "^0.82.0",
     "@release-it/conventional-changelog": "^10.0.1",
     "@types/jest": "^29.5.14",
     "@types/react": "^19.1.0",
@@ -84,6 +86,7 @@
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.4",
     "jest": "^29.7.0",
+    "lightningcss": "^1.30.2",
     "nitrogen": "^0.29.1",
     "prettier": "^3.6.2",
     "react": "19.1.0",
@@ -92,7 +95,8 @@
     "react-native-nitro-modules": "^0.29.1",
     "release-it": "^19.0.4",
     "turbo": "^2.5.6",
-    "typescript": "^5.9.2"
+    "typescript": "^5.9.2",
+    "typescript-eslint": "^8.46.1"
   },
   "peerDependencies": {
     "react": "*",
@@ -134,13 +138,6 @@
       }
     }
   },
-  "prettier": {
-    "quoteProps": "consistent",
-    "singleQuote": true,
-    "tabWidth": 2,
-    "trailingComma": "es5",
-    "useTabs": false
-  },
   "react-native-builder-bob": {
     "source": "src",
     "output": "lib",
@@ -170,9 +167,5 @@
     "languages": "kotlin-swift",
     "type": "nitro-module",
     "version": "0.54.3"
-  },
-  "dependencies": {
-    "@react-native/typescript-config": "^0.82.0",
-    "lightningcss": "^1.30.2"
   }
 }

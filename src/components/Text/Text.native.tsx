@@ -1,9 +1,10 @@
-import { Text as RNText, type TextProps } from 'react-native';
-import { copyComponentProperties, getDeepKeys } from '../../utils';
-import { useStyled } from '../../native/useStyled';
-import { useId } from 'react';
-import { useRef } from '../../native/useRef';
-import { StyleRegistry } from '../../specs/StyleRegistry';
+import { useId } from "react";
+import { Text as RNText, type TextProps } from "react-native";
+
+import { useRef } from "../../native/useRef";
+import { useStyled } from "../../native/useStyled";
+import { StyleRegistry } from "../../specs/StyleRegistry";
+import { copyComponentProperties, getDeepKeys } from "../../utils";
 
 export const Text = copyComponentProperties(RNText, (props: TextProps) => {
   const componentId = useId();
@@ -11,7 +12,7 @@ export const Text = copyComponentProperties(RNText, (props: TextProps) => {
   const style = useStyled(
     componentId,
     (props as Record<string, string>).className,
-    props
+    props,
   );
 
   const ref = useRef(componentId, (props as Record<string, any>).ref);
@@ -19,7 +20,7 @@ export const Text = copyComponentProperties(RNText, (props: TextProps) => {
   if (props.style) {
     StyleRegistry.updateComponentInlineStyleKeys(
       componentId,
-      getDeepKeys(props.style)
+      getDeepKeys(props.style),
     );
   }
 

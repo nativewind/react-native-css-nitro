@@ -1,21 +1,23 @@
-import { use, useEffect, useMemo, useReducer } from 'react';
-import { StyleRegistry } from '../specs/StyleRegistry';
-import type { AnyMap } from 'react-native-nitro-modules';
+import { use, useEffect, useMemo, useReducer } from "react";
+
+import type { AnyMap } from "react-native-nitro-modules";
+
+import { StyleRegistry } from "../specs/StyleRegistry";
 import type {
   Declarations,
   Styled,
-} from '../specs/StyleRegistry/HybridStyleRegistry.nitro';
-import { ContainerContext, VariableContext } from './contexts';
+} from "../specs/StyleRegistry/HybridStyleRegistry.nitro";
+import { ContainerContext, VariableContext } from "./contexts";
 
-const EMPTY_DECLARATIONS: Declarations = { classNames: '' };
+const EMPTY_DECLARATIONS: Declarations = { classNames: "" };
 
 export function useStyled(
   componentId: string,
   className: string | undefined,
   props: Record<string, any>,
-  isDisabled: boolean = false
+  isDisabled = false,
 ) {
-  const [_, rerender] = useReducer(() => ({}), {});
+  const [instance, rerender] = useReducer(() => ({}), {});
 
   let variableScope = use(VariableContext);
   let containerScope = use(ContainerContext);
@@ -25,7 +27,7 @@ export function useStyled(
         componentId,
         className,
         variableScope,
-        containerScope
+        containerScope,
       )
     : EMPTY_DECLARATIONS;
 
@@ -34,7 +36,7 @@ export function useStyled(
   if (declarations.requiresRuntimeCheck) {
     for (const entry of declarations.requiresRuntimeCheck) {
       if (entry[1](componentId, props as AnyMap, isDisabled)) {
-        validClassNames += ' ' + entry[0];
+        validClassNames += " " + entry[0];
       }
     }
   }
@@ -52,13 +54,15 @@ export function useStyled(
       rerender,
       validClassNames,
       variableScope,
-      containerScope
+      containerScope,
     );
-  }, [componentId, containerScope, validClassNames, variableScope]);
+  }, [componentId, instance, containerScope, validClassNames, variableScope]);
 
   useEffect(
-    () => () => StyleRegistry.deregisterComponent(componentId),
-    [componentId]
+    () => () => {
+      StyleRegistry.deregisterComponent(componentId);
+    },
+    [componentId],
   );
 
   if (
@@ -68,43 +72,43 @@ export function useStyled(
     declarations.focus ||
     declarations.hover
   ) {
-    styled ??= {};
-    styled.importantProps = { ...styled?.importantProps };
+    styled = { ...styled };
+    styled.importantProps = { ...styled.importantProps };
     const p = styled.importantProps as Record<string, unknown>;
 
     if (declarations.active) {
-      p.onPress = getInteractionHandler('onPress', styled, props);
-      p.onPressIn = getInteractionHandler('onPressIn', styled, props);
+      p.onPress = getInteractionHandler("onPress", styled, props);
+      p.onPressIn = getInteractionHandler("onPressIn", styled, props);
       p.onPressOut = getInteractionHandler(
-        'onPressOut',
+        "onPressOut",
         styled,
-        props.onPressOut
+        props.onPressOut,
       );
     }
 
     if (declarations.hover) {
-      p.onHoverIn = getInteractionHandler('onHoverIn', styled, props.onHoverIn);
+      p.onHoverIn = getInteractionHandler("onHoverIn", styled, props.onHoverIn);
       p.onHoverOut = getInteractionHandler(
-        'onHoverOut',
+        "onHoverOut",
         styled,
-        props.onHoverOut
+        props.onHoverOut,
       );
     }
 
     if (declarations.focus) {
-      p.onFocus = getInteractionHandler('onFocus', styled, props.onFocus);
-      p.onBlur = getInteractionHandler('onBlur', styled, props.onBlur);
+      p.onFocus = getInteractionHandler("onFocus", styled, props.onFocus);
+      p.onBlur = getInteractionHandler("onBlur", styled, props.onBlur);
     }
   }
 
   return styled;
 }
 
-const cache = new WeakMap<Function, Function>();
+const cache = new WeakMap<WeakKey, (event: unknown) => void>();
 function getInteractionHandler(
-  type: Parameters<(typeof StyleRegistry)['updateComponentState']>[1],
+  type: Parameters<(typeof StyleRegistry)["updateComponentState"]>[1],
   styled: Styled,
-  props: Record<string, any>
+  props: Record<string, any>,
 ) {
   const inlineHandler = props[type];
   if (!inlineHandler) {
@@ -116,7 +120,7 @@ function getInteractionHandler(
     return cached;
   }
 
-  const handler = (event: any) => {
+  const handler = (event: unknown) => {
     inlineHandler(event);
     styled[type]?.();
   };
