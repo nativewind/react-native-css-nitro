@@ -172,6 +172,7 @@
     "version": "0.54.3"
   },
   "dependencies": {
-    "@react-native/typescript-config": "^0.82.0"
+    "@react-native/typescript-config": "^0.82.0",
+    "lightningcss": "^1.30.2"
   }
 }

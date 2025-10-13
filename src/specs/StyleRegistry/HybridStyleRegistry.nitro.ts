@@ -1,3 +1,7 @@
+import type {
+  MediaFeatureComparison,
+  MediaFeatureNameFor_MediaFeatureId,
+} from 'lightningcss';
 import type { processColor } from 'react-native';
 import type { AnyMap, HybridObject } from 'react-native-nitro-modules';
 
@@ -46,6 +50,8 @@ export interface RawStyleRegistry {
   linkComponent(componentId: string, tag: number): void;
   registerExternalMethods(options: { processColor: typeof processColor }): void;
 }
+
+/*******************************    States    *********************************/
 
 export type Declarations = {
   classNames: string;
@@ -98,13 +104,19 @@ export type StyleConfig = [
 ];
 export type StyleConfigNativeStyleToProp = [string, string[]];
 
+/******************************    StyleRule    *******************************/
+
 interface StyleRule {
   s: SpecificityArray;
   v?: VariableDescriptor[];
-  d?: AnyMap[];
+  d?: StyleDescriptor[];
+
+  /** MediaQuery */
+  m?: MediaCondition[];
 }
 
 type SpecificityArray = number[];
+type StyleDescriptor = AnyMap;
 
 /******************************    Variables    *******************************/
 
@@ -112,3 +124,24 @@ type VariableDescriptor = [
   string,
   AnyMap | AnyMap[] | string | number | boolean,
 ];
+
+/******************************    Conditions    ******************************/
+
+export type MediaCondition =
+  | [string, string]
+  | [string, string[]]
+  // Comparison
+  | [
+      MediaFeatureComparison,
+      MediaFeatureNameFor_MediaFeatureId | 'dir',
+      StyleDescriptor,
+    ]
+  // [Start, End]
+  | [
+      string,
+      MediaFeatureNameFor_MediaFeatureId,
+      StyleDescriptor, // Start
+      MediaFeatureComparison, // Start comparison
+      StyleDescriptor, // End
+      MediaFeatureComparison, // End comparison
+    ];
