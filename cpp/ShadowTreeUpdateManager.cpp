@@ -129,15 +129,18 @@ namespace margelo {
                     obs = Observable<UpdatesMap>::create(UpdatesMap{});
                 }
 
-                // Convert each style entry into a dynamic update object
-                folly::dynamic payload = folly::dynamic::array();
-                payload.reserve(styleEntries.size());
+                // Convert each style entry into a dynamic update object (merged into a single object per tag)
+                folly::dynamic payload = folly::dynamic::object();
                 for (const auto &p: styleEntries) {
                     if (!p) {
-                        payload.push_back(folly::dynamic::object());
                         continue;
                     }
-                    payload.push_back(styleEntryToUpdate(*link.runtime, *p));
+                    auto obj = styleEntryToUpdate(*link.runtime, *p);
+                    if (obj.isObject()) {
+                        for (auto &kv: obj.items()) {
+                            payload[kv.first] = std::move(kv.second);
+                        }
+                    }
                 }
 
                 UpdatesMap cur = obs->get();
