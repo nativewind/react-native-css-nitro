@@ -26,6 +26,8 @@ namespace margelo {
     namespace nitro {
         namespace cssnitro {
 
+            struct VariantConverter; // forward decl for friend
+
             class ShadowTreeUpdateManager final {
             public:
                 using UpdatesMap = std::unordered_map<facebook::react::Tag, folly::dynamic>;
@@ -45,6 +47,7 @@ namespace margelo {
                 void registerProcessColorFunction(jsi::Function &&fn);
 
             private:
+                friend struct VariantConverter;
                 struct ComponentLink {
                     facebook::react::Tag tag{0};
                     jsi::Runtime *runtime{nullptr};
@@ -67,7 +70,7 @@ namespace margelo {
 
                 void ensureRuntimeEffect(jsi::Runtime &runtime);
 
-                void applyUpdates(jsi::Runtime &runtime, const UpdatesMap &updates);
+                static void applyUpdates(jsi::Runtime &runtime, const UpdatesMap &updates);
 
                 // String color processing (with caching)
                 folly::dynamic
