@@ -8,10 +8,12 @@
 #include <optional>
 #include <algorithm>
 #include <cctype>
+#include <cmath>
 
 #include "Effect.hpp"
 #include "StyleRule.hpp"
 #include "Environment.hpp"
+#include "Helpers.hpp"
 
 namespace margelo::nitro::cssnitro {
 
@@ -46,18 +48,73 @@ namespace margelo::nitro::cssnitro {
         template<class L, class R>
         static bool testMediaComparison(const std::string &op, const L &left, const R &right,
                                         reactnativecss::Effect::GetProxy &get) {
-            auto lhs = toNumber(left, get);
-            auto rhs = toNumber(right, get);
-            if (!lhs.has_value() || !rhs.has_value()) {
+            using helpers::lower;
+            using helpers::toNumber;
+            using helpers::toString;
+
+            // Accessors for environment
+            auto getWidth = [&]() -> double { return get(reactnativecss::env::windowWidth()); };
+            auto getHeight = [&]() -> double { return get(reactnativecss::env::windowHeight()); };
+
+            // Special cases when left is a string keyword
+            if (auto leftStr = toString(left)) {
+                const std::string key = lower(*leftStr);
+
+                if (key == "min-width") {
+                    auto v = toNumber(right);
+                    return v.has_value() && getWidth() >= *v;
+                }
+                if (key == "max-width") {
+                    auto v = toNumber(right);
+                    return v.has_value() && getWidth() <= *v;
+                }
+                if (key == "min-height") {
+                    auto v = toNumber(right);
+                    return v.has_value() && getHeight() >= *v;
+                }
+                if (key == "max-height") {
+                    auto v = toNumber(right);
+                    return v.has_value() && getHeight() <= *v;
+                }
+                if (key == "orientation") {
+                    auto vStr = toString(right);
+                    const double w = getWidth();
+                    const double h = getHeight();
+                    return vStr.has_value() && lower(*vStr) == "landscape" ? (h < w) : (h >= w);
+                }
+            }
+
+            // For general comparisons, right must be numeric
+            auto rightValOpt = toNumber(right);
+            if (!rightValOpt.has_value()) {
                 return false;
             }
-            const double a = *lhs;
-            const double b = *rhs;
+
+            // Left can be numeric or a string referring to width/height
+            std::optional<double> leftValOpt = toNumber(left);
+            if (!leftValOpt.has_value()) {
+                if (auto leftStr = toString(left)) {
+                    const std::string key = lower(*leftStr);
+                    if (key == "width") {
+                        leftValOpt = getWidth();
+                    } else if (key == "height") {
+                        leftValOpt = getHeight();
+                    } else {
+                        return false;
+                    }
+                } else {
+                    return false;
+                }
+            }
+
+            const double a = *leftValOpt;
+            const double b = *rightValOpt;
+
             if (op == "=") return nearlyEqual(a, b);
             if (op == ">") return a > b;
-            if (op == ">=") return a >= b || nearlyEqual(a, b);
+            if (op == ">=") return a > b || nearlyEqual(a, b);
             if (op == "<") return a < b;
-            if (op == "<=") return a <= b || nearlyEqual(a, b);
+            if (op == "<=") return a < b || nearlyEqual(a, b);
             return false;
         }
 
@@ -81,71 +138,6 @@ namespace margelo::nitro::cssnitro {
     private:
         static bool nearlyEqual(double a, double b, double eps = 1e-9) {
             return std::abs(a - b) <= eps * std::max(1.0, std::max(std::abs(a), std::abs(b)));
-        }
-
-        static std::string lower(std::string s) {
-            std::transform(s.begin(), s.end(), s.begin(),
-                           [](unsigned char c) { return (char) std::tolower(c); });
-            return s;
-        }
-
-        static std::optional<double>
-        tokenToNumberFromEnv(const std::string &tok, reactnativecss::Effect::GetProxy &get) {
-            const auto t = lower(tok);
-            if (t == "w" || t == "width" || t == "screenwidth") {
-                return get(reactnativecss::env::windowWidth());
-            }
-            if (t == "h" || t == "height" || t == "screenheight") {
-                return get(reactnativecss::env::windowHeight());
-            }
-            if (t == "scale" || t == "dpr" || t == "pixelratio") {
-                return get(reactnativecss::env::windowScale());
-            }
-            if (t == "fontscale" || t == "fs") {
-                return get(reactnativecss::env::windowFontScale());
-            }
-            return std::nullopt;
-        }
-
-        static std::optional<double> parseNumberString(const std::string &s) {
-            size_t start = 0, end = s.size();
-            while (start < end && std::isspace((unsigned char) s[start])) ++start;
-            while (end > start && std::isspace((unsigned char) s[end - 1])) --end;
-            if (start >= end) return std::nullopt;
-            size_t i = start;
-            if (s[i] == '+' || s[i] == '-') ++i;
-            bool dot = false;
-            while (i < end) {
-                char c = s[i];
-                if (std::isdigit((unsigned char) c)) ++i;
-                else if (c == '.' && !dot) {
-                    dot = true;
-                    ++i;
-                }
-                else break;
-            }
-            if (i == start || (i == start + 1 && (s[start] == '+' || s[start] == '-')))
-                return std::nullopt;
-            try { return std::stod(std::string{s.begin() + (long) start, s.begin() + (long) i}); }
-            catch (...) { return std::nullopt; }
-        }
-
-        template<class T>
-        static std::optional<double>
-        toNumber(const T &value, reactnativecss::Effect::GetProxy &get) {
-            using Decayed = std::decay_t<T>;
-            if constexpr (std::is_arithmetic_v<Decayed>) {
-                return static_cast<double>(value);
-            } else if constexpr (std::is_same_v<Decayed, bool>) {
-                return value ? 1.0 : 0.0;
-            } else if constexpr (std::is_same_v<Decayed, std::string>) {
-                if (auto env = tokenToNumberFromEnv(value, get)) return env;
-                return parseNumberString(value);
-            } else if constexpr (std::is_same_v<Decayed, const char *>) {
-                return toNumber(std::string(value), get);
-            } else {
-                return std::nullopt;
-            }
         }
 
         template<class Cond>
