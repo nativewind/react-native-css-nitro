@@ -1,36 +1,37 @@
+import type { processColor } from "react-native";
+
 import type {
   MediaFeatureComparison,
   MediaFeatureNameFor_MediaFeatureId,
-} from 'lightningcss';
-import type { processColor } from 'react-native';
-import type { AnyMap, HybridObject } from 'react-native-nitro-modules';
+} from "lightningcss";
+import type { AnyMap, HybridObject } from "react-native-nitro-modules";
 
 export type HybridStyleRegistry = StyleRegistry & RawStyleRegistry;
 
 export interface StyleRegistry
-  extends HybridObject<{ ios: 'c++'; android: 'c++' }> {
+  extends HybridObject<{ ios: "c++"; android: "c++" }> {
   set(className: string, styleRule: StyleRule): void;
   getDeclarations(
     componentId: string,
     classNames: string,
     variableScope: string,
-    containerScope: string
+    containerScope: string,
   ): Declarations;
   registerComponent(
     componentId: string,
     rerender: () => void,
     classNames: string,
     variableScope: string,
-    containerScope: string
+    containerScope: string,
   ): Styled;
   deregisterComponent(componentId: string): void;
   updateComponentInlineStyleKeys(
     componentId: string,
-    inlineStyleKeys: string[]
+    inlineStyleKeys: string[],
   ): void;
   updateComponentState(
     componentId: string,
-    type: UpdateComponentStateFns
+    type: UpdateComponentStateFns,
   ): void;
   unlinkComponent(componentId: string): void;
 
@@ -38,7 +39,7 @@ export interface StyleRegistry
     width: number,
     height: number,
     scale: number,
-    fontScale: number
+    fontScale: number,
   ): void;
 }
 
@@ -52,7 +53,7 @@ export interface RawStyleRegistry {
 
 /*******************************    States    *********************************/
 
-export type Declarations = {
+export interface Declarations {
   classNames: string;
   variableScope?: string;
   containerScope?: string;
@@ -63,15 +64,15 @@ export type Declarations = {
   focus?: boolean;
   hover?: boolean;
   requiresRuntimeCheck?: [string, RuntimeGuard][];
-};
+}
 
 type RuntimeGuard = (
   componentId: string,
   props: AnyMap,
-  isDisabled: boolean
+  isDisabled: boolean,
 ) => boolean;
 
-export type Styled = {
+export interface Styled {
   style?: AnyMap[];
   importantStyle?: AnyMap;
   props?: AnyMap;
@@ -85,16 +86,16 @@ export type Styled = {
   onHoverOut?: () => void;
   onFocus?: () => void;
   onBlur?: () => void;
-};
+}
 
 type UpdateComponentStateFns =
-  | 'onPress'
-  | 'onPressIn'
-  | 'onPressOut'
-  | 'onHoverIn'
-  | 'onHoverOut'
-  | 'onFocus'
-  | 'onBlur';
+  | "onPress"
+  | "onPressIn"
+  | "onPressOut"
+  | "onHoverIn"
+  | "onHoverOut"
+  | "onFocus"
+  | "onBlur";
 
 export type StyleConfig = [
   source: string,
@@ -132,7 +133,7 @@ export type MediaCondition =
   // Comparison
   | [
       MediaFeatureComparison,
-      MediaFeatureNameFor_MediaFeatureId | 'dir',
+      MediaFeatureNameFor_MediaFeatureId,
       StyleDescriptor,
     ]
   // [Start, End]
