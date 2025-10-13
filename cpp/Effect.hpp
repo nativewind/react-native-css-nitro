@@ -9,11 +9,36 @@
 
 namespace reactnativecss {
 
+    // Forward declarations to allow Effect::GetProxy operators without including headers here
+    template<class T>
+    class Observable;
+
+    template<class T>
+    class Computed;
+
     class Effect {
     public:
-        using Callback = std::function<void()>;
+        struct GetProxy {
+            Effect *self;
+
+            template<class U>
+            inline const U &operator()(Observable<U> &obs) const noexcept {
+                return obs.get(*self);
+            }
+
+            template<class U>
+            inline const U &operator()(Computed<U> &comp) const noexcept {
+                return comp.get(*self);
+            }
+        };
+
+        using Callback = std::function<void(GetProxy &)>;
 
         explicit Effect(Callback cb) : callback_(std::move(cb)) {}
+
+        // Backward-compat: allow constructing with a no-arg callback
+        explicit Effect(std::function<void()> cb)
+                : callback_([fn = std::move(cb)](GetProxy &) { if (fn) fn(); }) {}
 
         Effect(const Effect &) = delete;
 
@@ -86,8 +111,10 @@ namespace reactnativecss {
         // Immediate execution helper
         void runImmediate() {
             dispose();
-            if (callback_)
-                callback_();
+            if (callback_) {
+                GetProxy g{this};
+                callback_(g);
+            }
         }
 
         // Per-thread batching state
@@ -107,4 +134,4 @@ namespace reactnativecss {
         }
     };
 
-} // namespace nitro
+} // namespace reactnativecss

@@ -16,6 +16,7 @@
 #include <cassert>
 
 namespace margelo::nitro::cssnitro {
+
     using jsi::Runtime;
     using reactnativecss::Observable;
     namespace nitro_ns = ::margelo::nitro;
@@ -151,17 +152,13 @@ namespace margelo::nitro::cssnitro {
         }
         if (runtime_effects_.find(rt) == runtime_effects_.end()) {
             auto obs = rtObsIt->second;
-            auto weakBox = std::make_shared<std::weak_ptr<reactnativecss::Effect>>();
             auto effect = std::make_shared<reactnativecss::Effect>(
-                    [obs, rt, weakBox]() {
-                        auto eff = weakBox->lock();
-                        if (!eff) return;
-                        const ShadowTreeUpdateManager::UpdatesMap &updates = obs->get(*eff);
+                    [obs, rt](reactnativecss::Effect::GetProxy &get) {
+                        const ShadowTreeUpdateManager::UpdatesMap &updates = get(*obs);
                         if (updates.empty()) return;
                         ShadowTreeUpdateManager::applyUpdates(*rt, updates);
                         obs->set(ShadowTreeUpdateManager::UpdatesMap{});
                     });
-            *weakBox = effect;
             effect->run();
             runtime_effects_.emplace(rt, std::move(effect));
         }
