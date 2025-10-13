@@ -10,15 +10,7 @@
 #include <variant>
 #include <functional>
 #include <cctype>
-
-#if __has_include(<react/renderer/uimanager/UIManagerBinding.h>)
-
 #include <react/renderer/uimanager/UIManagerBinding.h>
-
-#define HAS_UIMANAGER_BINDING 1
-#else
-#define HAS_UIMANAGER_BINDING 0
-#endif
 
 namespace margelo {
     namespace nitro {
@@ -206,15 +198,11 @@ namespace margelo {
 
             void
             ShadowTreeUpdateManager::applyUpdates(Runtime &runtime, const UpdatesMap &updates) {
-#if HAS_UIMANAGER_BINDING
                 if (updates.empty()) return;
                 auto binding = facebook::react::UIManagerBinding::getBinding(runtime);
                 if (!binding) return;
                 auto &uiManager = binding->getUIManager();
                 uiManager.updateShadowTree(updates);
-#else
-                (void) runtime; (void) updates;
-#endif
             }
 
         }

@@ -16,17 +16,9 @@
 // New: dynamic payloads (now handled by ShadowTreeUpdateManager)
 #include <folly/dynamic.h>
 
-// React Tag and optional UIManagerBinding (guarded)
+// React Tag
 #include <react/renderer/core/ReactPrimitives.h> // facebook::react::Tag
 
-#if __has_include(<react/renderer/uimanager/UIManagerBinding.h>)
-
-#include <react/renderer/uimanager/UIManagerBinding.h>
-
-#define HAS_UIMANAGER_BINDING 1
-#else
-#define HAS_UIMANAGER_BINDING 0
-#endif
 
 namespace margelo::nitro::cssnitro {
 

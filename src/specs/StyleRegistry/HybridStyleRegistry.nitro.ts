@@ -31,12 +31,12 @@ export interface StyleRegistry
   unlinkComponent(componentId: string): void;
 
   /** Computed values */
-  setWindowDimensions(
-    width: number,
-    height: number,
-    scale: number,
-    fontScale: number
-  ): void;
+  // setWindowDimensions(
+  //   width: number,
+  //   height: number,
+  //   scale: number,
+  //   fontScale: number
+  // ): void;
 }
 
 /**
