@@ -159,7 +159,8 @@ namespace margelo::nitro::cssnitro {
                         ShadowTreeUpdateManager::applyUpdates(*rt, updates);
                         obs->set(ShadowTreeUpdateManager::UpdatesMap{});
                     });
-            effect->run();
+            // Setup the subscription by doing a dummy get()
+            (void) obs->get(*effect);
             runtime_effects_.emplace(rt, std::move(effect));
         }
     }
