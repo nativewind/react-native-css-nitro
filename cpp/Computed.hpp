@@ -23,23 +23,7 @@ namespace reactnativecss {
     template<class T>
     class Computed {
     public:
-        // Proxy passed to user callback; calling get(obs) performs obs.get(effect_)
-        struct GetProxy {
-            Computed *self;
-
-            template<class U>
-            inline const U &operator()(Observable<U> &obs) const noexcept {
-                return obs.get(self->effect_);
-            }
-
-            // Allow dependencies on other Computed<U>
-            template<class U>
-            inline const U &operator()(Computed<U> &comp) const noexcept {
-                return comp.get(self->effect_);
-            }
-        };
-
-        using ComputeFn = std::function<T(const T &prev, GetProxy &get)>;
+        using ComputeFn = std::function<T(const T &prev, Effect::GetProxy &get)>;
 
         // Factory: optional initial value (defaults to T{})
         template<class U = T>
@@ -65,20 +49,19 @@ namespace reactnativecss {
         template<class V>
         inline void set(V &&v) { value_->set(std::forward<V>(v)); }
 
-    inline void dispose() noexcept { effect_.dispose(); }
+        inline void dispose() noexcept { effect_.dispose(); }
 
     private:
         template<class U>
         explicit Computed(ComputeFn cb, U &&initial)
                 : compute_(std::move(cb)),
                   value_(Observable<T>::create(std::forward<U>(initial))),
-                  effect_([this] { recompute(); }) {}
+                  effect_([this](Effect::GetProxy &get) { recompute(get); }) {}
 
         // Run user compute, using current value as prev and GetProxy for reads
-        void recompute() {
-            GetProxy g{this};
+        void recompute(Effect::GetProxy &get) {
             const T &prev = value_->get();
-            T next = compute_(prev, g);
+            T next = compute_(prev, get);
             value_->set(std::move(next));
         }
 
