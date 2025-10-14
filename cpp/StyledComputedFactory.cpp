@@ -15,7 +15,7 @@ namespace margelo::nitro::cssnitro {
     using AnyMap = ::margelo::nitro::AnyMap;
 
     std::shared_ptr<reactnativecss::Computed<Styled>> makeStyledComputed(
-            const std::unordered_map<std::string, std::shared_ptr<reactnativecss::Observable<StyleRule>>> &styleRuleMap,
+            const std::unordered_map<std::string, std::shared_ptr<reactnativecss::Observable<std::vector<StyleRule>>>> &styleRuleMap,
             const std::string &classNames,
             const std::string &componentId,
             ShadowTreeUpdateManager &shadowUpdates) {
@@ -43,38 +43,40 @@ namespace margelo::nitro::cssnitro {
                             continue;
                         }
 
-                        const StyleRule &styleRule = get(*styleIt->second);
+                        const std::vector<StyleRule> &styleRules = get(*styleIt->second);
 
-                        // Skip rule if its media conditions don't pass
-                        if (!Rules::testRule(styleRule, get)) {
-                            continue;
-                        }
+                        for (const StyleRule &styleRule: styleRules) {
+                            // Skip rule if its media conditions don't pass
+                            if (!Rules::testRule(styleRule, get)) {
+                                continue;
+                            }
 
-                        if (styleRule.d.has_value()) {
-                            std::vector<std::variant<std::shared_ptr<AnyMap>, std::vector<std::shared_ptr<AnyMap>>>> stack(
-                                    styleRule.d->begin(), styleRule.d->end());
+                            if (styleRule.d.has_value()) {
+                                std::vector<std::variant<std::shared_ptr<AnyMap>, std::vector<std::shared_ptr<AnyMap>>>> stack(
+                                        styleRule.d->begin(), styleRule.d->end());
 
-                            while (!stack.empty()) {
-                                auto current = std::move(stack.back());
-                                stack.pop_back();
+                                while (!stack.empty()) {
+                                    auto current = std::move(stack.back());
+                                    stack.pop_back();
 
-                                std::visit(
-                                        [&stack, &styleEntries](auto &&value) {
-                                            using ValueType = std::decay_t<decltype(value)>;
+                                    std::visit(
+                                            [&stack, &styleEntries](auto &&value) {
+                                                using ValueType = std::decay_t<decltype(value)>;
 
-                                            if constexpr (std::is_same_v<ValueType, std::shared_ptr<AnyMap>>) {
-                                                if (value) {
-                                                    styleEntries.push_back(value);
-                                                }
-                                            } else if constexpr (std::is_same_v<ValueType, std::vector<std::shared_ptr<AnyMap>>>) {
-                                                for (const auto &nested: value) {
-                                                    if (nested) {
-                                                        stack.emplace_back(nested);
+                                                if constexpr (std::is_same_v<ValueType, std::shared_ptr<AnyMap>>) {
+                                                    if (value) {
+                                                        styleEntries.push_back(value);
+                                                    }
+                                                } else if constexpr (std::is_same_v<ValueType, std::vector<std::shared_ptr<AnyMap>>>) {
+                                                    for (const auto &nested: value) {
+                                                        if (nested) {
+                                                            stack.emplace_back(nested);
+                                                        }
                                                     }
                                                 }
-                                            }
-                                        },
-                                        current);
+                                            },
+                                            current);
+                                }
                             }
                         }
                     }

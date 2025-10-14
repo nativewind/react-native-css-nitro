@@ -3,7 +3,10 @@ import { StyleSheet, View } from "react-native";
 import { multiply, StyleRegistry } from "react-native-css-nitro";
 import { Text } from "react-native-css-nitro/components/Text";
 
-StyleRegistry.set("text-red-500", { s: [], d: [{ color: "red" }] });
+StyleRegistry.set("text-red-500", [
+  { s: [], d: [{ color: "red" }] },
+  { s: [], d: [{ color: "green" }] },
+]);
 
 export default function App() {
   return (
@@ -12,10 +15,12 @@ export default function App() {
         className="text-red-500"
         onPress={() => {
           console.log("Pressed!");
-          StyleRegistry.set("text-red-500", {
-            s: [],
-            d: [{ color: "blue", fontSize: 40 }],
-          });
+          StyleRegistry.set("text-red-500", [
+            {
+              s: [],
+              d: [{ color: "blue", fontSize: 40 }],
+            },
+          ]);
         }}
       >
         Multiply: {multiply(3, 7)}

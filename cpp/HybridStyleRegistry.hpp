@@ -37,7 +37,7 @@ namespace margelo::nitro::cssnitro {
 
         // ----- public API forwarded to Impl -----
         void set(const std::string &className,
-                 const StyleRule &styleRule) override;
+                 const std::vector<StyleRule> &styleRule) override;
 
         Declarations getDeclarations(const std::string &componentId, const std::string &classNames,
                                      const std::string &variableScope,

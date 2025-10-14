@@ -28,7 +28,7 @@ namespace margelo::nitro::cssnitro {
     struct HybridStyleRegistry::Impl {
         Impl();
 
-        void set(const std::string &className, const StyleRule &styleRule);
+        void set(const std::string &className, const std::vector<StyleRule> &styleRule);
 
         Declarations
         getDeclarations(const std::string &componentId, const std::string &classNames,
@@ -77,7 +77,7 @@ namespace margelo::nitro::cssnitro {
     private:
         std::unique_ptr<ShadowTreeUpdateManager> shadowUpdates_;
         std::unordered_map<std::string, std::shared_ptr<reactnativecss::Computed<Styled>>> computedMap_;
-        std::unordered_map<std::string, std::shared_ptr<reactnativecss::Observable<StyleRule>>> styleRuleMap_;
+        std::unordered_map<std::string, std::shared_ptr<reactnativecss::Observable<std::vector<StyleRule>>>> styleRuleMap_;
     };
 
 
@@ -96,7 +96,8 @@ namespace margelo::nitro::cssnitro {
 
     HybridStyleRegistry::~HybridStyleRegistry() = default;
 
-    void HybridStyleRegistry::set(const std::string &className, const StyleRule &styleRule) {
+    void HybridStyleRegistry::set(const std::string &className,
+                                  const std::vector<StyleRule> &styleRule) {
         impl_->set(className, styleRule);
     }
 
@@ -168,10 +169,10 @@ namespace margelo::nitro::cssnitro {
     }
 
     void HybridStyleRegistry::Impl::set(const std::string &className,
-                                        const StyleRule &styleRule) {
+                                        const std::vector<StyleRule> &styleRule) {
         auto it = styleRuleMap_.find(className);
         if (it == styleRuleMap_.end()) {
-            auto observable = reactnativecss::Observable<StyleRule>::create(styleRule);
+            auto observable = reactnativecss::Observable<std::vector<StyleRule>>::create(styleRule);
             styleRuleMap_.emplace(className, std::move(observable));
         } else if (it->second) {
             it->second->set(styleRule);
@@ -202,8 +203,15 @@ namespace margelo::nitro::cssnitro {
                 continue;
             }
 
-            const StyleRule &styleRule = styleIt->second->get();
-            if (styleRule.v.has_value()) {
+            const std::vector<StyleRule> &styleRules = styleIt->second->get();
+            bool hasVars = false;
+            for (const auto &sr: styleRules) {
+                if (sr.v.has_value()) {
+                    hasVars = true;
+                    break;
+                }
+            }
+            if (hasVars) {
                 declarations.variableScope = componentId;
                 break;
             }
@@ -228,7 +236,9 @@ namespace margelo::nitro::cssnitro {
         (void) rerender;
 
         // Build computed Styled via factory
-        auto computed = makeStyledComputed(styleRuleMap_, classNames, componentId, *shadowUpdates_);
+        auto computed = ::margelo::nitro::cssnitro::makeStyledComputed(styleRuleMap_, classNames,
+                                                                       componentId,
+                                                                       *shadowUpdates_);
 
         computedMap_[componentId] = computed;
 
