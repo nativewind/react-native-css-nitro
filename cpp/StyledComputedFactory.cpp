@@ -15,7 +15,7 @@ namespace margelo::nitro::cssnitro {
     using AnyMap = ::margelo::nitro::AnyMap;
 
     std::shared_ptr<reactnativecss::Computed<Styled>> makeStyledComputed(
-            const std::unordered_map<std::string, std::shared_ptr<reactnativecss::Observable<std::vector<StyleRule>>>> &styleRuleMap,
+            const std::unordered_map<std::string, std::shared_ptr<reactnativecss::Observable<std::vector<HybridStyleRule>>>> &styleRuleMap,
             const std::string &classNames,
             const std::string &componentId,
             ShadowTreeUpdateManager &shadowUpdates) {
@@ -43,9 +43,9 @@ namespace margelo::nitro::cssnitro {
                             continue;
                         }
 
-                        const std::vector<StyleRule> &styleRules = get(*styleIt->second);
+                        const std::vector<HybridStyleRule> &styleRules = get(*styleIt->second);
 
-                        for (const StyleRule &styleRule: styleRules) {
+                        for (const HybridStyleRule &styleRule: styleRules) {
                             // Skip rule if its media conditions don't pass
                             if (!Rules::testRule(styleRule, get)) {
                                 continue;

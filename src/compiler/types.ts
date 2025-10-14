@@ -19,7 +19,7 @@ export interface StyleRule {
    */
 
   /** MediaQuery */
-  m?: MediaCondition[];
+  m?: Record<string, [string, string | number]> & { $$op?: "or" | "not" };
   /** PseudoClassesQuery */
   p?: PseudoClassesQuery;
   /** Container Query */

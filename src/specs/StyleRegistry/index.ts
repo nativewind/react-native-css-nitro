@@ -1,4 +1,4 @@
-import { processColor } from "react-native";
+import { Dimensions, processColor } from "react-native";
 
 import { NitroModules } from "react-native-nitro-modules";
 
@@ -13,16 +13,16 @@ interface JSStyleRegistry {
   set(className: string, styleRule: StyleRule[]): void;
 }
 
-// const { width, height, scale, fontScale } = Dimensions.get('window');
-// StyleRegistry.setWindowDimensions(width, height, scale, fontScale);
-// Dimensions.addEventListener('change', ({ window }) => {
-//   StyleRegistry.setWindowDimensions(
-//     window.width,
-//     window.height,
-//     window.scale,
-//     window.fontScale
-//   );
-// });
+const { width, height, scale, fontScale } = Dimensions.get("window");
+StyleRegistry.setWindowDimensions(width, height, scale, fontScale);
+Dimensions.addEventListener("change", ({ window }) => {
+  StyleRegistry.setWindowDimensions(
+    window.width,
+    window.height,
+    window.scale,
+    window.fontScale,
+  );
+});
 
 StyleRegistry.registerExternalMethods({
   processColor,

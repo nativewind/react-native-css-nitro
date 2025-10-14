@@ -28,7 +28,7 @@ namespace margelo::nitro::cssnitro {
     struct HybridStyleRegistry::Impl {
         Impl();
 
-        void set(const std::string &className, const std::vector<StyleRule> &styleRule);
+        void set(const std::string &className, const std::vector<HybridStyleRule> &styleRule);
 
         Declarations
         getDeclarations(const std::string &componentId, const std::string &classNames,
@@ -77,7 +77,7 @@ namespace margelo::nitro::cssnitro {
     private:
         std::unique_ptr<ShadowTreeUpdateManager> shadowUpdates_;
         std::unordered_map<std::string, std::shared_ptr<reactnativecss::Computed<Styled>>> computedMap_;
-        std::unordered_map<std::string, std::shared_ptr<reactnativecss::Observable<std::vector<StyleRule>>>> styleRuleMap_;
+        std::unordered_map<std::string, std::shared_ptr<reactnativecss::Observable<std::vector<HybridStyleRule>>>> styleRuleMap_;
     };
 
 
@@ -97,7 +97,7 @@ namespace margelo::nitro::cssnitro {
     HybridStyleRegistry::~HybridStyleRegistry() = default;
 
     void HybridStyleRegistry::set(const std::string &className,
-                                  const std::vector<StyleRule> &styleRule) {
+                                  const std::vector<HybridStyleRule> &styleRule) {
         impl_->set(className, styleRule);
     }
 
@@ -169,10 +169,11 @@ namespace margelo::nitro::cssnitro {
     }
 
     void HybridStyleRegistry::Impl::set(const std::string &className,
-                                        const std::vector<StyleRule> &styleRule) {
+                                        const std::vector<HybridStyleRule> &styleRule) {
         auto it = styleRuleMap_.find(className);
         if (it == styleRuleMap_.end()) {
-            auto observable = reactnativecss::Observable<std::vector<StyleRule>>::create(styleRule);
+            auto observable = reactnativecss::Observable<std::vector<HybridStyleRule>>::create(
+                    styleRule);
             styleRuleMap_.emplace(className, std::move(observable));
         } else if (it->second) {
             it->second->set(styleRule);
@@ -203,7 +204,7 @@ namespace margelo::nitro::cssnitro {
                 continue;
             }
 
-            const std::vector<StyleRule> &styleRules = styleIt->second->get();
+            const std::vector<HybridStyleRule> &styleRules = styleIt->second->get();
             bool hasVars = false;
             for (const auto &sr: styleRules) {
                 if (sr.v.has_value()) {

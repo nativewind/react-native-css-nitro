@@ -11,145 +11,195 @@
 #include <cmath>
 
 #include "Effect.hpp"
-#include "StyleRule.hpp"
+#include "HybridStyleRule.hpp"
 #include "Environment.hpp"
 #include "Helpers.hpp"
+#include <NitroModules/AnyMap.hpp>
 
 namespace margelo::nitro::cssnitro {
 
-    // Trait to detect std::vector<T, Alloc>
-    template<typename T>
-    struct is_std_vector : std::false_type {
-    };
-    template<typename T, typename Alloc>
-    struct is_std_vector<std::vector<T, Alloc>> : std::true_type {
-    };
+    using AnyMap = ::margelo::nitro::AnyMap;
+    using AnyArray = ::margelo::nitro::AnyArray;
+    using AnyValue = ::margelo::nitro::AnyValue;
 
     class Rules {
     public:
-        static bool testRule(const StyleRule &rule, reactnativecss::Effect::GetProxy &get) {
-            if (rule.m && !rule.m->empty() && !testMediaQuery(*rule.m, get)) {
-                return false;
-            }
-            return true;
-        }
-
-        template<class Cond>
-        static bool
-        testMediaQuery(const std::vector<Cond> &media, reactnativecss::Effect::GetProxy &get) {
-            for (const auto &cond: media) {
-                if (!testMediaConditionDispatch(cond, get)) {
-                    return false;
-                }
-            }
-            return true;
-        }
-
-        template<class L, class R>
-        static bool testMediaComparison(const std::string &op, const L &left, const R &right,
-                                        reactnativecss::Effect::GetProxy &get) {
-            using helpers::lower;
-            using helpers::toNumber;
-            using helpers::toString;
-
-            // Accessors for environment
-            auto getWidth = [&]() -> double { return get(reactnativecss::env::windowWidth()); };
-            auto getHeight = [&]() -> double { return get(reactnativecss::env::windowHeight()); };
-
-            // Special cases when left is a string keyword
-            if (auto leftStr = toString(left)) {
-                const std::string key = lower(*leftStr);
-
-                if (key == "min-width") {
-                    auto v = toNumber(right);
-                    return v.has_value() && getWidth() >= *v;
-                }
-                if (key == "max-width") {
-                    auto v = toNumber(right);
-                    return v.has_value() && getWidth() <= *v;
-                }
-                if (key == "min-height") {
-                    auto v = toNumber(right);
-                    return v.has_value() && getHeight() >= *v;
-                }
-                if (key == "max-height") {
-                    auto v = toNumber(right);
-                    return v.has_value() && getHeight() <= *v;
-                }
-                if (key == "orientation") {
-                    auto vStr = toString(right);
-                    const double w = getWidth();
-                    const double h = getHeight();
-                    return vStr.has_value() && lower(*vStr) == "landscape" ? (h < w) : (h >= w);
-                }
+        static bool testRule(const HybridStyleRule &rule, reactnativecss::Effect::GetProxy &get) {
+            // If m is not defined, return true
+            if (!rule.m.has_value() || !rule.m.value()) {
+                return true;
             }
 
-            // For general comparisons, right must be numeric
-            auto rightValOpt = toNumber(right);
-            if (!rightValOpt.has_value()) {
-                return false;
+            auto &mediaMap = *rule.m.value();
+
+            // Get all keys to check if empty
+            auto keys = mediaMap.getAllKeys();
+            if (keys.empty()) {
+                return true;
             }
 
-            // Left can be numeric or a string referring to width/height
-            std::optional<double> leftValOpt = toNumber(left);
-            if (!leftValOpt.has_value()) {
-                if (auto leftStr = toString(left)) {
-                    const std::string key = lower(*leftStr);
-                    if (key == "width") {
-                        leftValOpt = getWidth();
-                    } else if (key == "height") {
-                        leftValOpt = getHeight();
-                    } else {
-                        return false;
+            // Check for $$op to determine logic mode
+            std::string logicOp = "and"; // default is "and"
+            bool negate = false;
+
+            if (mediaMap.contains("$$op")) {
+                if (mediaMap.isString("$$op")) {
+                    logicOp = mediaMap.getString("$$op");
+                    if (logicOp == "not") {
+                        negate = true;
+                        logicOp = "and"; // "not" just negates the result, logic is still "and"
                     }
-                } else {
-                    return false;
                 }
             }
 
-            const double a = *leftValOpt;
-            const double b = *rightValOpt;
+            // Track test results
+            std::vector<bool> results;
 
-            if (op == "=") return nearlyEqual(a, b);
-            if (op == ">") return a > b;
-            if (op == ">=") return a > b || nearlyEqual(a, b);
-            if (op == "<") return a < b;
-            if (op == "<=") return a < b || nearlyEqual(a, b);
-            return false;
-        }
-
-        template<class Elem>
-        static bool testMediaCondition(const std::vector<Elem> &condition,
-                                       reactnativecss::Effect::GetProxy &get) {
-            if (condition.empty()) return true;
-            const std::string &op = condition[0];
-            if (op == "[]" || op == "!!") return false;
-            if (op == "=" || op == ">" || op == ">=" || op == "<" || op == "<=") {
-                if (condition.size() >= 3) {
-                    const auto &left = condition[1];
-                    const auto &right = condition[2];
-                    return testMediaComparison(op, left, right, get);
+            // Loop over all keys
+            for (const auto &key: keys) {
+                // Skip the $$op key
+                if (key == "$$op") {
+                    continue;
                 }
-                return false;
+
+                // Value should be an array with [operator, expectedValue]
+                if (!mediaMap.isArray(key)) {
+                    continue;
+                }
+
+                AnyArray valueArray = mediaMap.getArray(key);
+                if (valueArray.size() < 2) {
+                    continue;
+                }
+
+                // Extract operator and expected value
+                std::string op;
+                if (std::holds_alternative<std::string>(valueArray[0])) {
+                    op = std::get<std::string>(valueArray[0]);
+                }
+
+                bool testResult = testMediaQuery(key, op, valueArray[1], get);
+                results.push_back(testResult);
             }
-            return false;
+
+            // If no tests were run, return true
+            if (results.empty()) {
+                return true;
+            }
+
+            // Apply logic
+            bool finalResult;
+            if (logicOp == "or") {
+                // "or" - at least one must pass
+                finalResult = false;
+                for (bool result: results) {
+                    if (result) {
+                        finalResult = true;
+                        break;
+                    }
+                }
+            } else {
+                // "and" - all must pass (default)
+                finalResult = true;
+                for (bool result: results) {
+                    if (!result) {
+                        finalResult = false;
+                        break;
+                    }
+                }
+            }
+
+            // Apply negation if needed
+            if (negate) {
+                finalResult = !finalResult;
+            }
+
+            return finalResult;
         }
 
     private:
-        static bool nearlyEqual(double a, double b, double eps = 1e-9) {
-            return std::abs(a - b) <= eps * std::max(1.0, std::max(std::abs(a), std::abs(b)));
-        }
-
-        template<class Cond>
         static bool
-        testMediaConditionDispatch(const Cond &cond, reactnativecss::Effect::GetProxy &get) {
-            if constexpr (is_std_vector<std::decay_t<Cond>>::value) {
-                return testMediaCondition(cond, get);
-            } else {
-                return true;
+        testMediaQuery(const std::string &key, const std::string &op, const AnyValue &value,
+                       reactnativecss::Effect::GetProxy &get) {
+            if (op == "=") {
+                if (key == "min-width") {
+                    if (std::holds_alternative<double>(value)) {
+                        double vw = get(reactnativecss::env::windowWidth());
+                        return vw >= std::get<double>(value);
+                    }
+                    return false;
+                }
+                if (key == "max-width") {
+                    if (std::holds_alternative<double>(value)) {
+                        double vw = get(reactnativecss::env::windowWidth());
+                        return vw <= std::get<double>(value);
+                    }
+                    return false;
+                }
+                if (key == "min-height") {
+                    if (std::holds_alternative<double>(value)) {
+                        double vh = get(reactnativecss::env::windowHeight());
+                        return vh >= std::get<double>(value);
+                    }
+                    return false;
+                }
+                if (key == "max-height") {
+                    if (std::holds_alternative<double>(value)) {
+                        double vh = get(reactnativecss::env::windowHeight());
+                        return vh <= std::get<double>(value);
+                    }
+                    return false;
+                }
+                if (key == "orientation") {
+                    if (std::holds_alternative<std::string>(value)) {
+                        std::string orientation = std::get<std::string>(value);
+                        double vw = get(reactnativecss::env::windowWidth());
+                        double vh = get(reactnativecss::env::windowHeight());
+                        if (orientation == "landscape") {
+                            return vh < vw;
+                        } else {
+                            return vh >= vw;
+                        }
+                    }
+                    return false;
+                }
             }
-        }
 
+            // For other operators, value must be a number
+            if (!std::holds_alternative<double>(value)) {
+                return false;
+            }
+
+            double right = std::get<double>(value);
+            double left = 0.0;
+
+            // Determine left value based on key and fetch only what's needed
+            if (key == "width") {
+                left = get(reactnativecss::env::windowWidth());
+            } else if (key == "height") {
+                left = get(reactnativecss::env::windowHeight());
+            } else if (key == "resolution") {
+                // TODO: Need to get PixelRatio - for now return 1.0
+                left = 1.0; // PixelRatio.get()
+            } else {
+                return false;
+            }
+
+            // Apply operator
+            if (op == "=") {
+                return left == right;
+            } else if (op == ">") {
+                return left > right;
+            } else if (op == ">=") {
+                return left >= right;
+            } else if (op == "<") {
+                return left < right;
+            } else if (op == "<=") {
+                return left <= right;
+            }
+
+            return false;
+        }
     };
 
 } // namespace margelo::nitro::cssnitro

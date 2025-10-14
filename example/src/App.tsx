@@ -5,7 +5,7 @@ import { Text } from "react-native-css-nitro/components/Text";
 
 StyleRegistry.set("text-red-500", [
   { s: [], d: [{ color: "red" }] },
-  { s: [], d: [{ color: "green" }], m: [["=", "orientation", "landscape"]] },
+  { s: [], d: [{ color: "green" }], m: { orientation: ["=", "landscape"] } },
 ]);
 
 export default function App() {
