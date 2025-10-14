@@ -74,14 +74,45 @@ namespace margelo::nitro::cssnitro {
                     // Convert mergedStyles to AnyMap and set next.style
                     if (!mergedStyles.empty()) {
                         auto anyMap = AnyMap::make(mergedStyles.size());
+
+                        static const std::unordered_set<std::string> transformProps = {
+                                "translateX", "translateY", "translateZ",
+                                "rotate", "rotateX", "rotateY", "rotateZ",
+                                "scaleX", "scaleY", "scaleZ",
+                                "skewX", "skewY",
+                                "perspective"
+                        };
+
                         for (const auto &kv: mergedStyles) {
-                            if (kv.first == "rotate") {
+                            if (transformProps.count(kv.first) > 0) {
                                 if (!anyMap->contains("transform")) {
                                     anyMap->setArray("transform", AnyArray{});
                                 }
 
-                                const auto &transformArray = anyMap->getArray("transform");
-                                // find the value in the array with the key "rotate" and set the key "rotate" to kv.second
+                                auto transformArray = anyMap->getArray("transform");
+
+                                // find the value in the array with the key matching kv.first and set it to kv.second
+                                bool foundTransform = false;
+                                for (auto &item: transformArray) {
+                                    if (std::holds_alternative<AnyObject>(item)) {
+                                        auto &obj = std::get<AnyObject>(item);
+                                        if (obj.count(kv.first) > 0) {
+                                            obj[kv.first] = kv.second;
+                                            foundTransform = true;
+                                            break;
+                                        }
+                                    }
+                                }
+
+                                // If transform property not found in array, add a new transform object
+                                if (!foundTransform) {
+                                    AnyObject transformObj;
+                                    transformObj[kv.first] = kv.second;
+                                    transformArray.emplace_back(transformObj);
+                                }
+
+                                anyMap->setArray("transform", transformArray);
+                                continue;
                             }
 
                             anyMap->setAny(kv.first, kv.second);
