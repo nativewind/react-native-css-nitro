@@ -29,6 +29,8 @@ namespace margelo::nitro::cssnitro {
 
         void set(const std::string &className, const std::vector<HybridStyleRule> &styleRule);
 
+        void addStyleSheet(const HybridStyleSheet &stylesheet);
+
         Declarations
         getDeclarations(const std::string &componentId, const std::string &classNames,
                         const std::string &variableScope, const std::string &containerScope);
@@ -98,6 +100,10 @@ namespace margelo::nitro::cssnitro {
     void HybridStyleRegistry::set(const std::string &className,
                                   const std::vector<HybridStyleRule> &styleRule) {
         impl_->set(className, styleRule);
+    }
+
+    void HybridStyleRegistry::addStyleSheet(const HybridStyleSheet &stylesheet) {
+        impl_->addStyleSheet(stylesheet);
     }
 
     Declarations HybridStyleRegistry::getDeclarations(const std::string &componentId,
@@ -183,6 +189,24 @@ namespace margelo::nitro::cssnitro {
         }
     }
 
+    void HybridStyleRegistry::Impl::addStyleSheet(const HybridStyleSheet &stylesheet) {
+        // Create an Effect batch to process all style updates together
+        reactnativecss::Effect::batch([this, &stylesheet]() {
+            // If the key "s" exists, loop over every entry
+            if (stylesheet.s.has_value()) {
+                const auto &styles = stylesheet.s.value();
+                for (const auto &entry: styles) {
+                    // entry is a tuple<string, HybridStyleRule>
+                    // entry[0] is the className, entry[1] is the styleRule
+                    const std::string &className = std::get<0>(entry);
+                    const std::vector<HybridStyleRule> &styleRule = std::get<1>(entry);
+
+                    // Call set with a vector containing the single styleRule
+                    set(className, styleRule);
+                }
+            }
+        });
+    }
 
     Declarations HybridStyleRegistry::Impl::getDeclarations(const std::string &componentId,
                                                             const std::string &classNames,

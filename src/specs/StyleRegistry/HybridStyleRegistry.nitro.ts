@@ -7,6 +7,7 @@ export type HybridStyleRegistry = StyleRegistry & RawStyleRegistry;
 export interface StyleRegistry
   extends HybridObject<{ ios: "c++"; android: "c++" }> {
   set(className: string, styleRule: HybridStyleRule[]): void;
+  addStyleSheet(stylesheet: HybridStyleSheet): void;
   getDeclarations(
     componentId: string,
     classNames: string,
@@ -100,11 +101,26 @@ export type StyleConfig = [
 ];
 export type StyleConfigNativeStyleToProp = [string, string[]];
 
+/******************************    StyleSheet   *******************************/
+
+export interface HybridStyleSheet {
+  /** rem */
+  r?: number;
+  /** StyleRuleSets */
+  s?: (readonly [string, HybridStyleRule[]])[];
+  // /** KeyFrames */
+  // k?: Animation[];
+  // /** Root Variables */
+  vr?: AnyMap;
+  // /** Universal Variables */
+  // vu?: RootVariables;
+}
+
 /******************************    StyleRule    *******************************/
 
 interface HybridStyleRule {
   s: SpecificityArray;
-  v?: HybridVariableDescriptor[];
+  v?: AnyMap;
 
   /** Declarations */
   d?: [AnyMap] | [AnyMap, AnyMap?];
@@ -114,10 +130,3 @@ interface HybridStyleRule {
 }
 
 type SpecificityArray = number[];
-
-/******************************    Variables    *******************************/
-
-type HybridVariableDescriptor = [
-  string,
-  AnyMap | AnyMap[] | string | number | boolean,
-];

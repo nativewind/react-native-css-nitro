@@ -39,6 +39,8 @@ namespace margelo::nitro::cssnitro {
         void set(const std::string &className,
                  const std::vector<HybridStyleRule> &styleRule) override;
 
+        void addStyleSheet(const HybridStyleSheet &stylesheet) override;
+
         Declarations getDeclarations(const std::string &componentId, const std::string &classNames,
                                      const std::string &variableScope,
                                      const std::string &containerScope) override;

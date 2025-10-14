@@ -3,7 +3,7 @@
 #include <string>
 #include <unordered_map>
 #include <memory>
-#include <NitroModules/AnyValue.hpp>
+#include <NitroModules/AnyMap.hpp>
 #include "Observable.hpp"
 #include "Effect.hpp"
 
