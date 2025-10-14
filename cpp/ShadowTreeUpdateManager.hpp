@@ -42,7 +42,7 @@ namespace margelo::nitro::cssnitro {
         void unlinkComponent(const std::string &componentId);
 
         void addUpdates(const std::string &componentId,
-                        const std::vector<std::shared_ptr<::margelo::nitro::AnyMap>> &styleEntries);
+                        const std::shared_ptr<::margelo::nitro::AnyMap> &styleEntries);
 
         void registerProcessColorFunction(jsi::Function &&fn);
 

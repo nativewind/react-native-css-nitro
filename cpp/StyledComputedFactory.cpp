@@ -2,6 +2,7 @@
 #include "Styled+Equality.hpp"
 #include "ShadowTreeUpdateManager.hpp"
 #include "Rules.hpp"
+#include "Helpers.hpp"
 
 #include <regex>
 #include <variant>
@@ -25,7 +26,11 @@ namespace margelo::nitro::cssnitro {
                     (void) prev;
 
                     Styled next{};
-                    std::vector<std::shared_ptr<AnyMap>> styleEntries;
+                    /**
+                     * Ideally this should an AnyMap, but settings values on an AnyMap doesn't work?
+                     * So we use an unordered_map and convert it to AnyMap at the end.
+                     */
+                    std::unordered_map<std::string, AnyValue> mergedStyles;
 
                     std::regex whitespace{"\\s+"};
                     std::sregex_token_iterator tokenIt(classNames.begin(), classNames.end(),
@@ -52,40 +57,39 @@ namespace margelo::nitro::cssnitro {
                             }
 
                             if (styleRule.d.has_value()) {
-                                std::vector<std::variant<std::shared_ptr<AnyMap>, std::vector<std::shared_ptr<AnyMap>>>> stack(
-                                        styleRule.d->begin(), styleRule.d->end());
+                                // Get the tuple from styleRule.d
+                                const auto &dTuple = styleRule.d.value();
 
-                                while (!stack.empty()) {
-                                    auto current = std::move(stack.back());
-                                    stack.pop_back();
-
-                                    std::visit(
-                                            [&stack, &styleEntries](auto &&value) {
-                                                using ValueType = std::decay_t<decltype(value)>;
-
-                                                if constexpr (std::is_same_v<ValueType, std::shared_ptr<AnyMap>>) {
-                                                    if (value) {
-                                                        styleEntries.push_back(value);
-                                                    }
-                                                } else if constexpr (std::is_same_v<ValueType, std::vector<std::shared_ptr<AnyMap>>>) {
-                                                    for (const auto &nested: value) {
-                                                        if (nested) {
-                                                            stack.emplace_back(nested);
-                                                        }
-                                                    }
-                                                }
-                                            },
-                                            current);
+                                // Merge styleRule.d[0] into mergedStyles
+                                const auto &firstMap = std::get<0>(std::get<0>(dTuple));
+                                for (const auto &kv: firstMap->getMap()) {
+                                    mergedStyles[kv.first] = kv.second;
                                 }
+                                // Ignore the other entries for now
+
                             }
                         }
                     }
 
-                    if (!styleEntries.empty()) {
-                        next.style = std::move(styleEntries);
+                    // Convert mergedStyles to AnyMap and set next.style
+                    if (!mergedStyles.empty()) {
+                        auto anyMap = AnyMap::make(mergedStyles.size());
+                        for (const auto &kv: mergedStyles) {
+                            if (kv.first == "rotate") {
+                                if (!anyMap->contains("transform")) {
+                                    anyMap->setArray("transform", AnyArray{});
+                                }
+
+                                const auto &transformArray = anyMap->getArray("transform");
+                                // find the value in the array with the key "rotate" and set the key "rotate" to kv.second
+                            }
+
+                            anyMap->setAny(kv.first, kv.second);
+                        }
+                        next.style = anyMap;
                     }
 
-                    // Notify ShadowTreeUpdateManager with the resolved style entries
+                    // Notify ShadowTreeUpdateManager with the resolved style
                     if (next.style.has_value()) {
                         shadowUpdates.addUpdates(componentId, next.style.value());
                     }

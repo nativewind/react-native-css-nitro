@@ -69,7 +69,7 @@ type RuntimeGuard = (
 ) => boolean;
 
 export interface Styled {
-  style?: AnyMap[];
+  style?: AnyMap;
   importantStyle?: AnyMap;
   props?: AnyMap;
   importantProps?: AnyMap;
@@ -105,14 +105,15 @@ export type StyleConfigNativeStyleToProp = [string, string[]];
 interface HybridStyleRule {
   s: SpecificityArray;
   v?: HybridVariableDescriptor[];
-  d?: HybridStyleDescriptor[];
+
+  /** Declarations */
+  d?: [AnyMap] | [AnyMap, AnyMap] | [AnyMap, AnyMap | undefined, AnyMap];
 
   /** MediaQuery */
   m?: AnyMap;
 }
 
 type SpecificityArray = number[];
-type HybridStyleDescriptor = AnyMap;
 
 /******************************    Variables    *******************************/
 

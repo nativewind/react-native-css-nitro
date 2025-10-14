@@ -79,9 +79,9 @@ namespace margelo::nitro::cssnitro {
         // Overload: convert an AnyMap directly (top-level style entry)
         static folly::dynamic convert(ShadowTreeUpdateManager &self,
                                       Runtime &runtime,
-                                      const nitro_ns::AnyMap &entry) {
+                                      const std::shared_ptr<::margelo::nitro::AnyMap> &entry) {
             folly::dynamic obj = folly::dynamic::object();
-            for (const auto &kv: entry.getMap()) {
+            for (const auto &kv: entry->getMap()) {
                 const auto &v = static_cast<const nitro_ns::VariantType &>(kv.second);
                 auto dynVal = convert(self, runtime, v);
                 if (containsColorInsensitive(kv.first)) {
@@ -108,29 +108,19 @@ namespace margelo::nitro::cssnitro {
 
     void ShadowTreeUpdateManager::addUpdates(
             const std::string &componentId,
-            const std::vector<std::shared_ptr<nitro_ns::AnyMap>> &styleEntries) {
+            const std::shared_ptr<::margelo::nitro::AnyMap> &styleMap) {
         auto it = component_links_.find(componentId);
         if (it == component_links_.end()) return;
 
         ComponentLink &link = it->second;
         if (link.runtime == nullptr) return;
 
+        // Convert the single AnyMap to folly::dynamic
+        auto payload = VariantConverter::convert(*this, *link.runtime, styleMap);
+
         auto &obs = runtime_updates_[link.runtime];
         if (!obs) {
             obs = Observable<UpdatesMap>::create(UpdatesMap{});
-        }
-
-        folly::dynamic payload = folly::dynamic::object();
-        for (const auto &p: styleEntries) {
-            if (!p) {
-                continue;
-            }
-            auto obj = VariantConverter::convert(*this, *link.runtime, *p);
-            if (obj.isObject()) {
-                for (auto &kv: obj.items()) {
-                    payload[kv.first] = std::move(kv.second);
-                }
-            }
         }
 
         UpdatesMap cur = obs->get();

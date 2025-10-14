@@ -1,7 +1,6 @@
 #include "HybridStyleRegistry.hpp"
 #include "Computed.hpp"
 #include "Observable.hpp"
-#include "Helpers.hpp"
 #include "ShadowTreeUpdateManager.hpp"
 #include "StyledComputedFactory.hpp"
 #include "Environment.hpp"
@@ -301,8 +300,6 @@ namespace margelo::nitro::cssnitro {
 
         /** processColor **/
         auto maybeProcessColorFn = args[0].asObject(runtime).getProperty(runtime, "processColor");
-        helpers::assertThat(runtime, maybeProcessColorFn.isObject(),
-                            "react-native-css: Can't load processColor function from JS.");
         jsi::Function processColorFn = maybeProcessColorFn.asObject(runtime).asFunction(runtime);
 
         shadowUpdates_->registerProcessColorFunction(std::move(processColorFn));
