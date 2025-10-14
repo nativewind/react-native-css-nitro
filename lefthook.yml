@@ -7,6 +7,9 @@ pre-commit:
     types:
       glob: "*.{js,ts, jsx, tsx}"
       run: npx tsc
+    nitrogen:
+      glob: "*.nitro.ts"
+      run: npx nitrogen
 commit-msg:
   parallel: true
   commands:
