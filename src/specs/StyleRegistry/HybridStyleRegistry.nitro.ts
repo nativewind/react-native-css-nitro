@@ -108,40 +108,40 @@ export type StyleConfigNativeStyleToProp = [string, string[]];
 
 interface StyleRule {
   s: SpecificityArray;
-  v?: VariableDescriptor[];
-  d?: StyleDescriptor[];
+  v?: HybridVariableDescriptor[];
+  d?: HybridStyleDescriptor[];
 
   /** MediaQuery */
-  m?: MediaCondition[];
+  m?: HybridMediaCondition[];
 }
 
 type SpecificityArray = number[];
-type StyleDescriptor = AnyMap;
+type HybridStyleDescriptor = AnyMap;
 
 /******************************    Variables    *******************************/
 
-type VariableDescriptor = [
+type HybridVariableDescriptor = [
   string,
   AnyMap | AnyMap[] | string | number | boolean,
 ];
 
 /******************************    Conditions    ******************************/
 
-export type MediaCondition =
+export type HybridMediaCondition =
   | [string, string]
   | [string, string[]]
   // Comparison
   | [
       MediaFeatureComparison,
       MediaFeatureNameFor_MediaFeatureId,
-      StyleDescriptor,
+      HybridStyleDescriptor,
     ]
   // [Start, End]
   | [
       string,
       MediaFeatureNameFor_MediaFeatureId,
-      StyleDescriptor, // Start
+      HybridStyleDescriptor, // Start
       MediaFeatureComparison, // Start comparison
-      StyleDescriptor, // End
+      HybridStyleDescriptor, // End
       MediaFeatureComparison, // End comparison
     ];
