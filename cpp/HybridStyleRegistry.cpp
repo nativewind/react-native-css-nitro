@@ -168,14 +168,18 @@ namespace margelo::nitro::cssnitro {
     }
 
     void HybridStyleRegistry::Impl::set(const std::string &className,
-                                        const std::vector<HybridStyleRule> &styleRule) {
+                                        const std::vector<HybridStyleRule> &styleRules) {
+        // Reverse the style rules, this way later on we can bail early if values are already set
+        auto reversedRules = styleRules;
+        std::reverse(reversedRules.begin(), reversedRules.end());
+
         auto it = styleRuleMap_.find(className);
         if (it == styleRuleMap_.end()) {
             auto observable = reactnativecss::Observable<std::vector<HybridStyleRule>>::create(
-                    styleRule);
+                    reversedRules);
             styleRuleMap_.emplace(className, std::move(observable));
         } else if (it->second) {
-            it->second->set(styleRule);
+            it->second->set(reversedRules);
         }
     }
 

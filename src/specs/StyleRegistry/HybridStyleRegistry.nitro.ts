@@ -107,7 +107,7 @@ interface HybridStyleRule {
   v?: HybridVariableDescriptor[];
 
   /** Declarations */
-  d?: [AnyMap] | [AnyMap, AnyMap] | [AnyMap, AnyMap | undefined, AnyMap];
+  d?: [AnyMap] | [AnyMap, AnyMap?];
 
   /** MediaQuery */
   m?: AnyMap;

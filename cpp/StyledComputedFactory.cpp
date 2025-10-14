@@ -3,6 +3,7 @@
 #include "ShadowTreeUpdateManager.hpp"
 #include "Rules.hpp"
 #include "Helpers.hpp"
+#include "StyleFunction.hpp"
 
 #include <regex>
 #include <variant>
@@ -57,13 +58,34 @@ namespace margelo::nitro::cssnitro {
                             }
 
                             if (styleRule.d.has_value()) {
-                                // Get the tuple from styleRule.d
-                                const auto &dTuple = styleRule.d.value();
-
-                                // Merge styleRule.d[0] into mergedStyles
-                                const auto &firstMap = std::get<0>(std::get<0>(dTuple));
-                                for (const auto &kv: firstMap->getMap()) {
-                                    mergedStyles[kv.first] = kv.second;
+                                const auto declarations = styleRule.d.value();
+                                const auto &dStyles = std::get<0>(std::get<0>(declarations));
+                                for (const auto &kv: dStyles->getMap()) {
+                                    // Only set if key doesn't already exist
+                                    if (mergedStyles.count(kv.first) == 0) {
+                                        // if kv.second is an array with "fn" as the first key, resolve it
+                                        if (dStyles->isArray(kv.first)) {
+                                            const auto &arr = dStyles->getArray(kv.first);
+                                            if (!arr.empty() &&
+                                                std::holds_alternative<std::string>(arr[0]) &&
+                                                std::get<std::string>(arr[0]) == "fn") {
+                                                // arr[1] is the function name, arr[2] is the arguments array
+                                                if (arr.size() == 3 &&
+                                                    std::holds_alternative<std::string>(
+                                                            arr[1]) &&
+                                                    std::holds_alternative<AnyArray>(arr[2])) {
+                                                    const auto &fnName = std::get<std::string>(
+                                                            arr[1]);
+                                                    const auto &fnArgs = std::get<AnyArray>(
+                                                            arr[2]);
+                                                    mergedStyles[kv.first] = StyleFunction::resolveStyleFn(
+                                                            fnName, fnArgs, get);
+                                                    continue;
+                                                }
+                                            }
+                                        }
+                                        mergedStyles[kv.first] = kv.second;
+                                    }
                                 }
                                 // Ignore the other entries for now
 
