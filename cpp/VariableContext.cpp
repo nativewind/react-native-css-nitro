@@ -1,8 +1,11 @@
 #include "VariableContext.hpp"
+#include "Rules.hpp"
 
 namespace margelo::nitro::cssnitro {
 
     using AnyValue = ::margelo::nitro::AnyValue;
+    using AnyMap = ::margelo::nitro::AnyMap;
+    using AnyObject = ::margelo::nitro::AnyObject;
 
     // Initialize the static contexts map
     std::unordered_map<std::string, VariableContext::Context> VariableContext::contexts;
@@ -43,6 +46,11 @@ namespace margelo::nitro::cssnitro {
     std::optional<AnyValue> VariableContext::checkContext(const std::string &contextKey,
                                                           const std::string &name,
                                                           reactnativecss::Effect::GetProxy &get) {
+        // If this is a root or universal context, ensure it exists
+        if (contextKey == "root" || contextKey == "universal") {
+            createContext(contextKey, "root");
+        }
+
         auto contextIt = contexts.find(contextKey);
         if (contextIt != contexts.end()) {
             auto &valueMap = contextIt->second.values;
@@ -54,12 +62,27 @@ namespace margelo::nitro::cssnitro {
                     return result;
                 }
             } else {
-                // Variable doesn't exist in this context, create a new Observable with nullptr
-                auto observable = reactnativecss::Observable<AnyValue>::create(AnyValue());
-                valueMap[name] = observable;
+                // Variable doesn't exist in this context
+                // Check if this is a root or universal context
+                if (contextKey == "root" || contextKey == "universal") {
+                    // For root/universal, create a top-level computed
+                    auto &targetMap = (contextKey == "root") ? root_values : universal_values;
+                    auto computed = createTopLevelVariableComputed(targetMap, name);
+                    valueMap[name] = computed;
 
-                // Subscribe to the observable by calling get()
-                get(*observable);
+                    // Get the initial value from the computed
+                    auto result = get(*computed);
+                    if (!std::holds_alternative<std::monostate>(result)) {
+                        return result;
+                    }
+                } else {
+                    // For other contexts, create a new Observable with nullptr
+                    auto observable = reactnativecss::Observable<AnyValue>::create(AnyValue());
+                    valueMap[name] = observable;
+
+                    // Subscribe to the observable by calling get()
+                    get(*observable);
+                }
             }
         }
         return std::nullopt;
@@ -116,7 +139,8 @@ namespace margelo::nitro::cssnitro {
         auto contextIt = contexts.find(key);
         if (contextIt == contexts.end()) {
             // Context doesn't exist, create it with empty parent
-            createContext(key, "");
+            // This couldn't happen in normal usage, but just in case
+            createContext(key, "root");
             contextIt = contexts.find(key);
         }
 
@@ -196,25 +220,92 @@ namespace margelo::nitro::cssnitro {
             auto varIt = valueMap.find(name);
 
             if (varIt == valueMap.end()) {
-                // Variable doesn't exist in context, create a Computed that reads from the target map
-                auto computed = reactnativecss::Computed<AnyValue>::create(
-                        [&targetMap, name](const AnyValue &prev,
-                                           reactnativecss::Effect::GetProxy &get) -> AnyValue {
-                            (void) prev;
-
-                            // Read from the target map
-                            auto it = targetMap.find(name);
-                            if (it != targetMap.end()) {
-                                return get(*it->second);
-                            }
-                            return AnyValue();
-                        },
-                        AnyValue() // Initial value
-                );
-
+                // Variable doesn't exist in context, create a Computed using the factory
+                auto computed = createTopLevelVariableComputed(targetMap, name);
                 valueMap[name] = computed;
             }
         }
+    }
+
+    std::shared_ptr<reactnativecss::Computed<AnyValue>>
+    VariableContext::createTopLevelVariableComputed(
+            std::unordered_map<std::string, std::shared_ptr<reactnativecss::Observable<AnyValue>>> &targetMap,
+            const std::string &name) {
+        return reactnativecss::Computed<AnyValue>::create(
+                [&targetMap, name](const AnyValue &prev,
+                                   reactnativecss::Effect::GetProxy &get) -> AnyValue {
+                    (void) prev;
+
+                    // Read from the target map
+                    auto it = targetMap.find(name);
+                    if (it != targetMap.end()) {
+                        auto value = get(*it->second);
+
+                        // Check if value is an array
+                        if (!std::holds_alternative<AnyArray>(value)) {
+                            return AnyValue();
+                        }
+
+                        const auto &arr = std::get<AnyArray>(value);
+
+                        // Loop over the array
+                        for (const auto &item: arr) {
+                            // Each item should be an object with "v" and "m" keys
+                            if (!std::holds_alternative<AnyObject>(item)) {
+                                continue;
+                            }
+
+                            const auto &obj = std::get<AnyObject>(item);
+
+                            // Check if "m" is set
+                            auto mIt = obj.find("m");
+                            if (mIt != obj.end() &&
+                                !std::holds_alternative<std::monostate>(mIt->second)) {
+                                // "m" is set, test the media query/condition
+                                const auto &mValue = mIt->second;
+
+                                // Convert AnyValue to AnyMap if it's an object
+                                if (std::holds_alternative<AnyObject>(mValue)) {
+                                    const auto &mediaObj = std::get<AnyObject>(mValue);
+                                    auto mediaMap = AnyMap::make(mediaObj.size());
+
+                                    // Copy the object into an AnyMap
+                                    for (const auto &kv: mediaObj) {
+                                        mediaMap->setAny(kv.first, kv.second);
+                                    }
+
+                                    // Test the rule - if it doesn't pass, continue to next item
+                                    if (!Rules::testRule(mediaMap, get)) {
+                                        continue;
+                                    }
+                                    // If it passes, fall through to return the "v" value
+                                } else {
+                                    // "m" exists but is not an AnyObject, skip this item
+                                    continue;
+                                }
+                            }
+
+                            // "m" is not set or the media query passed, return the value of "v"
+                            auto vIt = obj.find("v");
+                            if (vIt != obj.end()) {
+                                return vIt->second;
+                            }
+                        }
+
+                        return AnyValue();
+                    } else {
+                        // Observable doesn't exist, create it and subscribe
+                        auto observable = reactnativecss::Observable<AnyValue>::create(AnyValue());
+                        targetMap[name] = observable;
+
+                        // Subscribe to the observable
+                        get(*observable);
+
+                        return AnyValue();
+                    }
+                },
+                AnyValue() // Initial value
+        );
     }
 
 } // namespace margelo::nitro::cssnitro

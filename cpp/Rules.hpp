@@ -31,7 +31,19 @@ namespace margelo::nitro::cssnitro {
             }
 
             auto &mediaMap = *rule.m.value();
+            return testMediaMap(mediaMap, get);
+        }
 
+        static bool
+        testRule(const std::shared_ptr<AnyMap> &mediaMap, reactnativecss::Effect::GetProxy &get) {
+            if (!mediaMap) {
+                return true;
+            }
+            return testMediaMap(*mediaMap, get);
+        }
+
+    private:
+        static bool testMediaMap(const AnyMap &mediaMap, reactnativecss::Effect::GetProxy &get) {
             // Get all keys to check if empty
             auto keys = mediaMap.getAllKeys();
             if (keys.empty()) {
@@ -117,7 +129,6 @@ namespace margelo::nitro::cssnitro {
             return finalResult;
         }
 
-    private:
         static bool
         testMediaQuery(const std::string &key, const std::string &op, const AnyValue &value,
                        reactnativecss::Effect::GetProxy &get) {

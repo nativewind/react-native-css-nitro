@@ -68,6 +68,12 @@ namespace margelo::nitro::cssnitro {
         static std::optional<AnyValue>
         checkContext(const std::string &contextKey, const std::string &name,
                      reactnativecss::Effect::GetProxy &get);
+
+        // Factory function to create a Computed for top-level variables
+        static std::shared_ptr<reactnativecss::Computed<AnyValue>>
+        createTopLevelVariableComputed(
+                std::unordered_map<std::string, std::shared_ptr<reactnativecss::Observable<AnyValue>>> &targetMap,
+                const std::string &name);
     };
 
 } // namespace margelo::nitro::cssnitro

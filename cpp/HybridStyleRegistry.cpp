@@ -72,7 +72,6 @@ namespace margelo::nitro::cssnitro {
     }
 
     void HybridStyleRegistry::setRootVariables(const std::shared_ptr<AnyMap> &variables) {
-        VariableContext::createContext("root", "root");
 
         // Loop over all entries in the AnyMap
         for (const auto &entry: variables->getMap()) {
@@ -85,7 +84,6 @@ namespace margelo::nitro::cssnitro {
     }
 
     void HybridStyleRegistry::setUniversalVariables(const std::shared_ptr<AnyMap> &variables) {
-        VariableContext::createContext("universal", "root");
 
         // Loop over all entries in the AnyMap
         for (const auto &entry: variables->getMap()) {
