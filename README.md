@@ -28,6 +28,7 @@ These are the features that are "done". Only basic testing as been performed.
 - [ ] Metro
 - [ ] Update compiler to new syntax
 - [x] Upgrading elements
+- [ ] Upgrading elements warning
 - [ ] Animations
 - [ ] Transitions
 - [ ] Important styles
