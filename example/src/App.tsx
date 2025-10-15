@@ -14,9 +14,9 @@ StyleRegistry.addStyleSheet({
           d: [{ color: "green" }],
           m: { orientation: ["=", "landscape"] },
         },
-        { s: [], d: [{ color: ["fn", "var", "test", "yellow"] }] },
       ],
     ],
+    ["text-[--test]", [{ s: [], d: [{ color: ["fn", "var", "test"] }] }]],
   ],
 });
 
@@ -24,11 +24,11 @@ export default function App() {
   return (
     <View style={styles.container}>
       <Text
-        className="text-red-500"
+        className="text-[--test] text-red-500"
         onPress={() => {
           console.log("Pressed!");
           StyleRegistry.setRootVariables({
-            test: [{ v: "pink", m: { orientation: ["=", "landscape"] } }],
+            test: [{ v: "pink", m: { orientation: ["=", "portrait"] } }],
           });
         }}
       >
