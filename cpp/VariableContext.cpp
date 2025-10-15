@@ -2,12 +2,17 @@
 
 namespace margelo::nitro::cssnitro {
 
-    // Initialize the static contexts map
-    std::unordered_map<std::string, std::unordered_map<std::string, std::shared_ptr<reactnativecss::Observable<AnyValue>>>> VariableContext::contexts;
+    using AnyValue = ::margelo::nitro::AnyValue;
 
-    void VariableContext::createContext(const std::string &key) {
-        // Create a new empty map for this context
-        contexts[key] = std::unordered_map<std::string, std::shared_ptr<reactnativecss::Observable<AnyValue>>>();
+    // Initialize the static contexts map
+    std::unordered_map<std::string, VariableContext::Context> VariableContext::contexts;
+
+    void VariableContext::createContext(const std::string &key, const std::string &parent) {
+        // Create a new context with the specified parent
+        Context ctx;
+        ctx.parent = parent;
+        ctx.values = std::unordered_map<std::string, VariableValue>();
+        contexts[key] = ctx;
     }
 
     void VariableContext::deleteContext(const std::string &key) {
@@ -15,28 +20,79 @@ namespace margelo::nitro::cssnitro {
         contexts.erase(key);
     }
 
-    const AnyValue &VariableContext::getVariable(const std::string &key, const std::string &name,
-                                                 reactnativecss::Effect::GetProxy &get) {
-        // Find the context
-        auto contextIt = contexts.find(key);
-        if (contextIt == contexts.end()) {
-            // Context doesn't exist, throw or return a default value
-            static AnyValue defaultValue;
-            return defaultValue;
+    AnyValue VariableContext::getValue(const VariableValue &varValue,
+                                       reactnativecss::Effect::GetProxy &get) {
+        if (std::holds_alternative<std::shared_ptr<reactnativecss::Observable<AnyValue>>>(
+                varValue)) {
+            auto obs = std::get<std::shared_ptr<reactnativecss::Observable<AnyValue>>>(varValue);
+            return get(*obs);
+        } else {
+            auto comp = std::get<std::shared_ptr<reactnativecss::Computed<AnyValue>>>(varValue);
+            return get(*comp);
+        }
+    }
+
+    std::optional<AnyValue> VariableContext::checkContext(const std::string &contextKey,
+                                                          const std::string &name,
+                                                          reactnativecss::Effect::GetProxy &get) {
+        auto contextIt = contexts.find(contextKey);
+        if (contextIt != contexts.end()) {
+            auto &valueMap = contextIt->second.values;
+            auto varIt = valueMap.find(name);
+            if (varIt != valueMap.end()) {
+                auto result = getValue(varIt->second, get);
+                // If the value is not nullopt, return it
+                if (!std::holds_alternative<std::monostate>(result)) {
+                    return result;
+                }
+            }
+        }
+        return std::nullopt;
+    }
+
+    std::optional<AnyValue>
+    VariableContext::getVariable(const std::string &key, const std::string &name,
+                                 reactnativecss::Effect::GetProxy &get) {
+        // 1. Check current key
+        auto result = checkContext(key, name, get);
+        if (result.has_value()) {
+            return result;
         }
 
-        // Find the variable in the context
-        auto &variableMap = contextIt->second;
-        auto varIt = variableMap.find(name);
-        if (varIt == variableMap.end()) {
-            // Variable doesn't exist, return a default value
-            static AnyValue defaultValue;
-            return defaultValue;
+        // 2. Check "universal" context (if we're not already in it)
+        if (key != "universal") {
+            result = checkContext("universal", name, get);
+            if (result.has_value()) {
+                return result;
+            }
+
+            // 3. Walk up the parent chain from the original key
+            std::string currentKey = key;
+            auto contextIt = contexts.find(currentKey);
+            if (contextIt != contexts.end()) {
+                std::string parentKey = contextIt->second.parent;
+
+                // Walk up parent chain until we hit root (parent points to itself)
+                while (parentKey != currentKey && !parentKey.empty()) {
+                    result = checkContext(parentKey, name, get);
+                    if (result.has_value()) {
+                        return result;
+                    }
+
+                    // Move to next parent
+                    auto parentIt = contexts.find(parentKey);
+                    if (parentIt != contexts.end()) {
+                        currentKey = parentKey;
+                        parentKey = parentIt->second.parent;
+                    } else {
+                        break;
+                    }
+                }
+            }
         }
 
-        // Get the observable and subscribe the effect to it
-        auto &observable = varIt->second;
-        return get(*observable);
+        // Variable doesn't exist in any context
+        return std::nullopt;
     }
 
     void VariableContext::setVariable(const std::string &key, const std::string &name,
@@ -44,39 +100,78 @@ namespace margelo::nitro::cssnitro {
         // Find or create the context
         auto contextIt = contexts.find(key);
         if (contextIt == contexts.end()) {
-            // Context doesn't exist, create it
-            createContext(key);
+            // Context doesn't exist, create it with empty parent
+            createContext(key, "");
             contextIt = contexts.find(key);
         }
 
-        auto &variableMap = contextIt->second;
+        auto &valueMap = contextIt->second.values;
 
-        // Find or create the observable for this variable
-        auto varIt = variableMap.find(name);
-        if (varIt == variableMap.end()) {
-            // Variable doesn't exist, create a new Observable with the value
-            auto observable = reactnativecss::Observable<AnyValue>::create(value);
-            variableMap[name] = observable;
-        } else {
-            // Variable exists, update its value
-            varIt->second->set(value);
+        // Find the variable
+        auto varIt = valueMap.find(name);
+        if (varIt != valueMap.end()) {
+            // Variable exists, check if it's an Observable or Computed
+            if (std::holds_alternative<std::shared_ptr<reactnativecss::Observable<AnyValue>>>(
+                    varIt->second)) {
+                // It's an Observable, just update its value
+                auto obs = std::get<std::shared_ptr<reactnativecss::Observable<AnyValue>>>(
+                        varIt->second);
+                obs->set(value);
+                return;
+            } else {
+                // It's a Computed, dispose it and create a new Observable
+                auto comp = std::get<std::shared_ptr<reactnativecss::Computed<AnyValue>>>(
+                        varIt->second);
+                comp->dispose();
+            }
         }
+
+        // Create a new Observable with the value
+        auto observable = reactnativecss::Observable<AnyValue>::create(value);
+        valueMap[name] = observable;
     }
 
     void VariableContext::setVariable(const std::string &key, const std::string &name,
-                                      std::shared_ptr<reactnativecss::Observable<AnyValue>> observable) {
+                                      std::shared_ptr<reactnativecss::Computed<AnyValue>> computed) {
         // Find or create the context
         auto contextIt = contexts.find(key);
         if (contextIt == contexts.end()) {
-            // Context doesn't exist, create it
-            createContext(key);
+            // Context doesn't exist, create it with empty parent
+            createContext(key, "");
             contextIt = contexts.find(key);
         }
 
-        auto &variableMap = contextIt->second;
+        auto &valueMap = contextIt->second.values;
 
-        // Set the variable to use the provided Observable directly
-        variableMap[name] = observable;
+        // Check if variable already exists and dispose if it's a Computed
+        auto varIt = valueMap.find(name);
+        if (varIt != valueMap.end()) {
+            if (std::holds_alternative<std::shared_ptr<reactnativecss::Computed<AnyValue>>>(
+                    varIt->second)) {
+                auto existingComp = std::get<std::shared_ptr<reactnativecss::Computed<AnyValue>>>(
+                        varIt->second);
+                existingComp->dispose();
+            }
+        }
+
+        // Set the variable to use the provided Computed directly
+        valueMap[name] = computed;
+    }
+
+    void VariableContext::setTopLevelVariable(const std::string &key, const std::string &name,
+                                              const std::vector<HybridRootVariableRule> &value) {
+        // Create a new Computed that returns "yellow" for now
+        auto computed = reactnativecss::Computed<AnyValue>::create(
+                [](const AnyValue &prev, reactnativecss::Effect::GetProxy &get) -> AnyValue {
+                    (void) prev;
+                    (void) get;
+                    return AnyValue("yellow");
+                },
+                AnyValue() // Initial value
+        );
+
+        // Use the Computed overload to set the variable
+        setVariable(key, name, computed);
     }
 
 } // namespace margelo::nitro::cssnitro

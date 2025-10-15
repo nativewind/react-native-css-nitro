@@ -7,6 +7,7 @@ export type HybridStyleRegistry = StyleRegistry & RawStyleRegistry;
 export interface StyleRegistry
   extends HybridObject<{ ios: "c++"; android: "c++" }> {
   setClassname(classname: string, styleRule: HybridStyleRule[]): void;
+  setRootVariable(name: string, value: HybridRootVariableRule[]): void;
   addStyleSheet(stylesheet: HybridStyleSheet): void;
   getDeclarations(
     componentId: string,
@@ -130,3 +131,12 @@ interface HybridStyleRule {
 }
 
 type SpecificityArray = number[];
+
+/******************************    Variables    *******************************/
+
+interface HybridRootVariableRule {
+  d: AnyMap;
+
+  /** MediaQuery */
+  m?: AnyMap;
+}

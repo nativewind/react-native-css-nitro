@@ -3,39 +3,70 @@
 #include <string>
 #include <unordered_map>
 #include <memory>
+#include <optional>
+#include <variant>
 #include <NitroModules/AnyMap.hpp>
 #include "Observable.hpp"
+#include "Computed.hpp"
 #include "Effect.hpp"
 
 namespace margelo::nitro::cssnitro {
 
     using AnyValue = ::margelo::nitro::AnyValue;
 
+    // Forward declaration
+    struct HybridRootVariableRule;
+
     class VariableContext {
     public:
-        // Static map: context key -> (variable name -> Observable<AnyValue>)
-        static std::unordered_map<std::string, std::unordered_map<std::string, std::shared_ptr<reactnativecss::Observable<AnyValue>>>> contexts;
+        // Value can be either Observable or Computed
+        using VariableValue = std::variant<
+                std::shared_ptr<reactnativecss::Observable<AnyValue>>,
+                std::shared_ptr<reactnativecss::Computed<AnyValue>>
+        >;
 
-        // Create a new context with the given key
-        static void createContext(const std::string &key);
+        struct Context {
+            std::string parent;
+            std::unordered_map<std::string, VariableValue> values;
+        };
+
+        // Static map: context key -> Context
+        static std::unordered_map<std::string, Context> contexts;
+
+        // Create a new context with the given key and parent
+        static void createContext(const std::string &key, const std::string &parent);
 
         // Delete a context by key
         static void deleteContext(const std::string &key);
 
         // Get a variable from a context, subscribing the effect to changes
-        static const AnyValue &getVariable(const std::string &key, const std::string &name,
-                                           reactnativecss::Effect::GetProxy &get);
+        // Returns std::nullopt if the context or variable doesn't exist
+        static std::optional<AnyValue> getVariable(const std::string &key, const std::string &name,
+                                                   reactnativecss::Effect::GetProxy &get);
 
-        // Set a variable in a context
+        // Set a variable in a context (creates an Observable)
         static void
         setVariable(const std::string &key, const std::string &name, const AnyValue &value);
 
-        // Set a variable in a context using an existing Observable
+        // Set a variable in a context using an existing Computed
         static void setVariable(const std::string &key, const std::string &name,
-                                std::shared_ptr<reactnativecss::Observable<AnyValue>> observable);
+                                std::shared_ptr<reactnativecss::Computed<AnyValue>> computed);
+
+        // Set a top-level variable (creates a Computed from HybridRootVariableRule)
+        static void setTopLevelVariable(const std::string &key, const std::string &name,
+                                        const std::vector<HybridRootVariableRule> &value);
 
     private:
         VariableContext() = delete; // Static-only class
+
+        // Helper to get value from a VariableValue variant
+        static AnyValue
+        getValue(const VariableValue &varValue, reactnativecss::Effect::GetProxy &get);
+
+        // Helper to check a specific context for the variable
+        static std::optional<AnyValue>
+        checkContext(const std::string &contextKey, const std::string &name,
+                     reactnativecss::Effect::GetProxy &get);
     };
 
 } // namespace margelo::nitro::cssnitro

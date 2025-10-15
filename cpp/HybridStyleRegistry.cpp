@@ -4,6 +4,7 @@
 #include "ShadowTreeUpdateManager.hpp"
 #include "StyledComputedFactory.hpp"
 #include "Environment.hpp"
+#include "VariableContext.hpp"
 
 #include <regex>
 #include <string>
@@ -68,6 +69,12 @@ namespace margelo::nitro::cssnitro {
                 }
             }
         });
+    }
+
+    void HybridStyleRegistry::setRootVariable(const std::string &name,
+                                              const std::vector<HybridRootVariableRule> &value) {
+        // Call setTopLevelVariable with key="root"
+        VariableContext::setTopLevelVariable("root", name, value);
     }
 
     Declarations HybridStyleRegistry::getDeclarations(const std::string &componentId,
