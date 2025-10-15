@@ -71,27 +71,17 @@ namespace margelo::nitro::cssnitro {
                                             if (!arr.empty() &&
                                                 std::holds_alternative<std::string>(arr[0]) &&
                                                 std::get<std::string>(arr[0]) == "fn") {
-                                                // arr[1] is the function name, arr[2] is the arguments array
-                                                if (arr.size() == 3 &&
-                                                    std::holds_alternative<std::string>(
-                                                            arr[1]) &&
-                                                    std::holds_alternative<AnyArray>(arr[2])) {
-                                                    const auto &fnName = std::get<std::string>(
-                                                            arr[1]);
-                                                    const auto &fnArgs = std::get<AnyArray>(
-                                                            arr[2]);
-                                                    auto result = StyleFunction::resolveStyleFn(
-                                                            fnName, fnArgs, get, variableScope);
+                                                auto result = StyleFunction::resolveStyleFn(
+                                                        arr, get, variableScope);
 
-                                                    // Skip if resolveStyleFn returns nullptr
-                                                    if (std::holds_alternative<std::monostate>(
-                                                            result)) {
-                                                        continue;
-                                                    }
-
-                                                    mergedStyles[kv.first] = result;
+                                                // Skip if resolveStyleFn returns nullptr
+                                                if (std::holds_alternative<std::monostate>(
+                                                        result)) {
                                                     continue;
                                                 }
+
+                                                mergedStyles[kv.first] = result;
+                                                continue;
                                             }
                                         }
                                         mergedStyles[kv.first] = kv.second;

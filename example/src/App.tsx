@@ -14,15 +14,15 @@ StyleRegistry.addStyleSheet({
           d: [{ color: "green" }],
           m: { orientation: ["=", "landscape"] },
         },
-        { s: [], d: [{ color: ["fn", "test", []] }] },
+        { s: [], d: [{ color: ["fn", "var", "test", "yellow"] }] },
       ],
     ],
   ],
 });
 
-StyleRegistry.setRootVariables({
-  test: [{ v: "blue" }],
-});
+// StyleRegistry.setRootVariables({
+//   test: [{ v: "blue" }],
+// });
 
 export default function App() {
   return (

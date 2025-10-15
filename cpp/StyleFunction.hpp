@@ -24,17 +24,45 @@ namespace margelo::nitro::cssnitro {
     class StyleFunction {
     public:
         /**
-         * Resolve a style function by name with the given arguments.
+         * Resolve a style function with the given arguments.
          *
-         * @param fnName The name of the function to resolve
-         * @param fnArgs The arguments to pass to the function
+         * @param fnArgs The arguments array (first element should be the function name)
          * @param get The Effect::GetProxy for reactive dependencies
          * @param variableScope The variable scope context for resolving variables
          * @return The resolved style value
          */
         static AnyValue resolveStyleFn(
-                const std::string &fnName,
                 const AnyArray &fnArgs,
+                typename reactnativecss::Effect::GetProxy &get,
+                const std::string &variableScope
+        );
+
+        /**
+         * Resolve a CSS variable from the variable context.
+         *
+         * @param name The name of the variable to resolve
+         * @param fallback The fallback value if the variable is not found
+         * @param get The Effect::GetProxy for reactive dependencies
+         * @param variableScope The variable scope context for resolving variables
+         * @return The resolved variable value or fallback
+         */
+        static AnyValue resolveVar(
+                const std::string &name,
+                const AnyValue &fallback,
+                typename reactnativecss::Effect::GetProxy &get,
+                const std::string &variableScope
+        );
+
+        /**
+         * Resolve an AnyValue, checking if it contains a "var" function call.
+         *
+         * @param value The value to resolve
+         * @param get The Effect::GetProxy for reactive dependencies
+         * @param variableScope The variable scope context for resolving variables
+         * @return The resolved value
+         */
+        static AnyValue resolveAnyValue(
+                const AnyValue &value,
                 typename reactnativecss::Effect::GetProxy &get,
                 const std::string &variableScope
         );
