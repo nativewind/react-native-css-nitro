@@ -15,7 +15,7 @@ There are two exceptions where styles are applied via a React re-render:
 
 ## Progress
 
-These are the features that are "done". Only basic testing as been performed.
+These are the features that are "done", in that they pass basic testing. More complex testing is needed to ensure they work in all cases.
 
 - [x] Dynamic styles - shadow tree
 - [x] Dynamic styles - JS rerender
@@ -34,16 +34,16 @@ These are the features that are "done". Only basic testing as been performed.
 - [ ] Container attribute queries
 - [x] Dynamic Variables
 - [x] Global variables w/ media queries
-- [ ] CSS functions (min max etc)
-- [ ] Style target prop
+- [ ] CSS functions (min, max, platform functions, etc)
+- [ ] Alt style props (e.g `headerStyle`)
 - [ ] Metro
-- [ ] Update compiler to new syntax
+- [ ] Update compiler to new syntax (switch tuples to objects)
 - [x] Upgrading elements
 - [ ] Upgrading elements warning
 - [ ] Animations
-- [x] Transitions
+- [ ] Transitions
 - [ ] Important styles
 - [ ] Important props
 - [ ] Shorthand runtime styles
-- [ ] Native component wrappers
+- [ ] Native component wrappers (e.g TextInput, ScrollView, etc)
 - [ ] 3rd party hook (nativeStyleToProp, etc)
