@@ -1,39 +1,37 @@
 # react-native-css-nitro
 
-A
+`rect-native-css` ported to C++ for performance. This is a prototype and not production ready. Ideally this eventually be `react-native-css@4.0.0`
 
-## Installation
+## Progress
 
+These are the features that are "done". Only basic testing as been performed.
 
-```sh
-npm install react-native-css-nitro react-native-nitro-modules
-
-> `react-native-nitro-modules` is required as this library relies on [Nitro Modules](https://nitro.margelo.com/).
-```
-
-
-## Usage
-
-
-```js
-import { multiply } from 'react-native-css-nitro';
-
-// ...
-
-const result = multiply(3, 7);
-```
-
-
-## Contributing
-
-- [Development workflow](CONTRIBUTING.md#development-workflow)
-- [Sending a pull request](CONTRIBUTING.md#sending-a-pull-request)
-- [Code of conduct](CODE_OF_CONDUCT.md)
-
-## License
-
-MIT
-
----
-
-Made with [create-react-native-library](https://github.com/callstack/react-native-builder-bob)
+- [x] Dynamic styles - shadow tree
+- [ ] Dynamic styles - JS rerender
+- [x] Style hot reload - shadow tree
+- [ ] Style hot reload- JS rerender
+- [x] Web
+- [x] Multiple style rules
+- [x] Specificity sorting
+- [x] Transform
+- [ ] Filter
+- [x] Pseudo classes
+- [x] Media query
+- [ ] Attribute selectors
+- [x] Container named queries
+- [x] Container media queries
+- [ ] Container attribute queries
+- [x] Dynamic Variables
+- [x] Global variables w/ media queries
+- [ ] CSS functions (min max etc)
+- [ ] Style target prop
+- [ ] Metro
+- [ ] Update compiler to new syntax
+- [ ] Upgrading elements
+- [ ] Animations
+- [ ] Transitions
+- [ ] Important styles
+- [ ] Important props
+- [ ] Shorthand runtime styles
+- [ ] Native component wrappers
+- [ ] 3rd party hook (nativeStyleToProp, etc)
