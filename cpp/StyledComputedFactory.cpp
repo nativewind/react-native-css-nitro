@@ -22,11 +22,12 @@ namespace margelo::nitro::cssnitro {
             const std::unordered_map<std::string, std::shared_ptr<reactnativecss::Observable<std::vector<HybridStyleRule>>>> &styleRuleMap,
             const std::string &classNames,
             const std::string &componentId,
+            const std::function<void()> &rerender,
             ShadowTreeUpdateManager &shadowUpdates,
             const std::string &variableScope,
             const std::string &containerScope) {
         auto computed = reactnativecss::Computed<Styled>::create(
-                [&styleRuleMap, classNames, componentId, &shadowUpdates, variableScope, containerScope](
+                [&styleRuleMap, classNames, componentId, &rerender, &shadowUpdates, variableScope, containerScope](
                         const Styled &prev,
                         typename reactnativecss::Effect::GetProxy &get) {
                     (void) prev;
@@ -158,8 +159,12 @@ namespace margelo::nitro::cssnitro {
                         next.style = anyMap;
                     }
 
-                    // Notify ShadowTreeUpdateManager with the resolved style
+                    if (shouldRerender(next)) {
+                        (void) rerender();
+                    }
+
                     if (next.style.has_value()) {
+                        // Notify ShadowTreeUpdateManager with the resolved style
                         shadowUpdates.addUpdates(componentId, next.style.value());
                     }
 
@@ -168,6 +173,11 @@ namespace margelo::nitro::cssnitro {
                 Styled{});
 
         return computed;
+    }
+
+    bool shouldRerender(const Styled &styled) {
+        // Check if props has a value - if it does, we should rerender
+        return styled.props.has_value();
     }
 
 } // namespace margelo::nitro::cssnitro

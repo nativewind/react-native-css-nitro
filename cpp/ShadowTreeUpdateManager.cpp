@@ -106,6 +106,11 @@ namespace margelo::nitro::cssnitro {
         if (it != component_links_.end()) component_links_.erase(it);
     }
 
+    bool ShadowTreeUpdateManager::hasComponent(const std::string &componentId) {
+        auto it = component_links_.find(componentId);
+        return (it == component_links_.end());
+    }
+
     void ShadowTreeUpdateManager::addUpdates(
             const std::string &componentId,
             const std::shared_ptr<::margelo::nitro::AnyMap> &styleMap) {

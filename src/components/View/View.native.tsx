@@ -12,8 +12,8 @@ export const View = copyComponentProperties(
   (originalProps: ViewProps) => {
     let p = originalProps as Record<string, any>;
     const componentId = useId();
-    const ref = useRef(componentId, p.ref);
     const next = useStyledProps(componentId, p.className, p);
+    const ref = useRef(componentId, p.ref);
 
     if (p.style) {
       StyleRegistry.updateComponentInlineStyleKeys(

@@ -39,6 +39,8 @@ namespace margelo::nitro::cssnitro {
                            const std::string &componentId,
                            facebook::react::Tag tag);
 
+        bool hasComponent(const std::string &componentId);
+
         void unlinkComponent(const std::string &componentId);
 
         void addUpdates(const std::string &componentId,
