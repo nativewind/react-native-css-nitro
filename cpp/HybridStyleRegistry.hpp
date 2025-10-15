@@ -24,6 +24,8 @@ namespace reactnativecss {
 
 namespace margelo::nitro::cssnitro {
 
+    class ShadowTreeUpdateManager;
+
     class HybridStyleRegistry : public HybridStyleRegistrySpec {
     public:
         HybridStyleRegistry();
@@ -67,9 +69,6 @@ namespace margelo::nitro::cssnitro {
         void loadHybridMethods() override;
 
     private:
-        struct Impl;
-        std::shared_ptr<Impl> impl_;
-
         jsi::Value linkComponent(jsi::Runtime &runtime,
                                  const jsi::Value &thisValue,
                                  const jsi::Value *args, size_t count);
@@ -77,6 +76,11 @@ namespace margelo::nitro::cssnitro {
         jsi::Value registerExternalMethods(jsi::Runtime &runtime,
                                            const jsi::Value &thisValue,
                                            const jsi::Value *args, size_t count);
+
+        // Static shared state
+        static std::unique_ptr<ShadowTreeUpdateManager> shadowUpdates_;
+        static std::unordered_map<std::string, std::shared_ptr<reactnativecss::Computed<Styled>>> computedMap_;
+        static std::unordered_map<std::string, std::shared_ptr<reactnativecss::Observable<std::vector<HybridStyleRule>>>> styleRuleMap_;
     };
 
 } // namespace margelo::nitro::cssnitro
