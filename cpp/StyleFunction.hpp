@@ -29,12 +29,14 @@ namespace margelo::nitro::cssnitro {
          * @param fnName The name of the function to resolve
          * @param fnArgs The arguments to pass to the function
          * @param get The Effect::GetProxy for reactive dependencies
+         * @param variableScope The variable scope context for resolving variables
          * @return The resolved style value
          */
         static AnyValue resolveStyleFn(
                 const std::string &fnName,
                 const AnyArray &fnArgs,
-                typename reactnativecss::Effect::GetProxy &get
+                typename reactnativecss::Effect::GetProxy &get,
+                const std::string &variableScope
         );
     };
 

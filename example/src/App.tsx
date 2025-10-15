@@ -20,6 +20,10 @@ StyleRegistry.addStyleSheet({
   ],
 });
 
+StyleRegistry.setRootVariables({
+  test: [{ v: "blue" }],
+});
+
 export default function App() {
   return (
     <View style={styles.container}>
@@ -27,7 +31,7 @@ export default function App() {
         className="text-red-500"
         onPress={() => {
           console.log("Pressed!");
-          StyleRegistry.set("text-red-500", [
+          StyleRegistry.setClassname("text-red-500", [
             {
               s: [],
               d: [{ color: "blue", fontSize: 40 }],

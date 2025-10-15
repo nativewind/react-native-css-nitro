@@ -30,6 +30,10 @@ namespace margelo::nitro::cssnitro {
         // Static map: context key -> Context
         static std::unordered_map<std::string, Context> contexts;
 
+        // Static maps for root and universal values
+        static std::unordered_map<std::string, std::shared_ptr<reactnativecss::Observable<AnyValue>>> root_values;
+        static std::unordered_map<std::string, std::shared_ptr<reactnativecss::Observable<AnyValue>>> universal_values;
+
         // Create a new context with the given key and parent
         static void createContext(const std::string &key, const std::string &parent);
 

@@ -6,6 +6,8 @@ namespace margelo::nitro::cssnitro {
 
     // Initialize the static contexts map
     std::unordered_map<std::string, VariableContext::Context> VariableContext::contexts;
+    std::unordered_map<std::string, std::shared_ptr<reactnativecss::Observable<AnyValue>>> VariableContext::root_values;
+    std::unordered_map<std::string, std::shared_ptr<reactnativecss::Observable<AnyValue>>> VariableContext::universal_values;
 
     void VariableContext::createContext(const std::string &key, const std::string &parent) {
         // Check if context already exists
@@ -173,18 +175,46 @@ namespace margelo::nitro::cssnitro {
 
     void VariableContext::setTopLevelVariable(const std::string &key, const std::string &name,
                                               const AnyValue &value) {
-        // Create a new Computed that returns the provided value
-        auto computed = reactnativecss::Computed<AnyValue>::create(
-                [value](const AnyValue &prev, reactnativecss::Effect::GetProxy &get) -> AnyValue {
-                    (void) prev;
-                    (void) get;
-                    return value;
-                },
-                AnyValue() // Initial value
-        );
+        // Determine which map to use based on the key
+        auto &targetMap = (key == "root") ? root_values : universal_values;
 
-        // Use the Computed overload to set the variable
-        setVariable(key, name, computed);
+        // Find or create the observable in the target map
+        auto observableIt = targetMap.find(name);
+        if (observableIt != targetMap.end()) {
+            // Observable already exists, just update its value
+            observableIt->second->set(value);
+        } else {
+            // Create a new Observable with the value
+            auto observable = reactnativecss::Observable<AnyValue>::create(value);
+            targetMap[name] = observable;
+        }
+
+        // Check if the name has been set for the key context
+        auto contextIt = contexts.find(key);
+        if (contextIt != contexts.end()) {
+            auto &valueMap = contextIt->second.values;
+            auto varIt = valueMap.find(name);
+
+            if (varIt == valueMap.end()) {
+                // Variable doesn't exist in context, create a Computed that reads from the target map
+                auto computed = reactnativecss::Computed<AnyValue>::create(
+                        [&targetMap, name](const AnyValue &prev,
+                                           reactnativecss::Effect::GetProxy &get) -> AnyValue {
+                            (void) prev;
+
+                            // Read from the target map
+                            auto it = targetMap.find(name);
+                            if (it != targetMap.end()) {
+                                return get(*it->second);
+                            }
+                            return AnyValue();
+                        },
+                        AnyValue() // Initial value
+                );
+
+                valueMap[name] = computed;
+            }
+        }
     }
 
 } // namespace margelo::nitro::cssnitro

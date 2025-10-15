@@ -20,10 +20,12 @@ namespace margelo::nitro::cssnitro {
             const std::unordered_map<std::string, std::shared_ptr<reactnativecss::Observable<std::vector<HybridStyleRule>>>> &styleRuleMap,
             const std::string &classNames,
             const std::string &componentId,
-            ShadowTreeUpdateManager &shadowUpdates) {
+            ShadowTreeUpdateManager &shadowUpdates,
+            const std::string &variableScope) {
         auto computed = reactnativecss::Computed<Styled>::create(
-                [&styleRuleMap, classNames, componentId, &shadowUpdates](const Styled &prev,
-                                                                         typename reactnativecss::Effect::GetProxy &get) {
+                [&styleRuleMap, classNames, componentId, &shadowUpdates, variableScope](
+                        const Styled &prev,
+                        typename reactnativecss::Effect::GetProxy &get) {
                     (void) prev;
 
                     Styled next{};
@@ -78,8 +80,16 @@ namespace margelo::nitro::cssnitro {
                                                             arr[1]);
                                                     const auto &fnArgs = std::get<AnyArray>(
                                                             arr[2]);
-                                                    mergedStyles[kv.first] = StyleFunction::resolveStyleFn(
-                                                            fnName, fnArgs, get);
+                                                    auto result = StyleFunction::resolveStyleFn(
+                                                            fnName, fnArgs, get, variableScope);
+
+                                                    // Skip if resolveStyleFn returns nullptr
+                                                    if (std::holds_alternative<std::monostate>(
+                                                            result)) {
+                                                        continue;
+                                                    }
+
+                                                    mergedStyles[kv.first] = result;
                                                     continue;
                                                 }
                                             }

@@ -155,7 +155,8 @@ namespace margelo::nitro::cssnitro {
         // Build computed Styled via factory
         auto computed = ::margelo::nitro::cssnitro::makeStyledComputed(styleRuleMap_, classNames,
                                                                        componentId,
-                                                                       *shadowUpdates_);
+                                                                       *shadowUpdates_,
+                                                                       variableScope);
 
         computedMap_[componentId] = computed;
 

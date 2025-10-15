@@ -19,6 +19,7 @@ namespace margelo::nitro::cssnitro {
             const std::unordered_map<std::string, std::shared_ptr<reactnativecss::Observable<std::vector<HybridStyleRule>>>> &styleRuleMap,
             const std::string &classNames,
             const std::string &componentId,
-            ShadowTreeUpdateManager &shadowUpdates);
+            ShadowTreeUpdateManager &shadowUpdates,
+            const std::string &variableScope);
 
 } // namespace margelo::nitro::cssnitro

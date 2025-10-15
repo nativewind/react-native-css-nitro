@@ -10,7 +10,7 @@ export const StyleRegistry = NitroModules.createHybridObject<
 >("HybridStyleRegistry");
 
 interface JSStyleRegistry {
-  set(className: string, styleRule: StyleRule[]): void;
+  setClassname(className: string, styleRule: StyleRule[]): void;
 }
 
 const { width, height, scale, fontScale } = Dimensions.get("window");
