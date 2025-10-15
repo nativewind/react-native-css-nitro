@@ -43,8 +43,9 @@ namespace margelo::nitro::cssnitro {
 
         void addStyleSheet(const HybridStyleSheet &stylesheet) override;
 
-        void setRootVariable(const std::string &name,
-                             const std::vector<HybridRootVariableRule> &value) override;
+        void setRootVariables(const std::shared_ptr<AnyMap> &variables) override;
+
+        void setUniversalVariables(const std::shared_ptr<AnyMap> &variables) override;
 
         Declarations getDeclarations(const std::string &componentId, const std::string &classNames,
                                      const std::string &variableScope,

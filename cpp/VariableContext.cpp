@@ -8,6 +8,12 @@ namespace margelo::nitro::cssnitro {
     std::unordered_map<std::string, VariableContext::Context> VariableContext::contexts;
 
     void VariableContext::createContext(const std::string &key, const std::string &parent) {
+        // Check if context already exists
+        if (contexts.find(key) != contexts.end()) {
+            // Context already exists, don't overwrite it
+            return;
+        }
+
         // Create a new context with the specified parent
         Context ctx;
         ctx.parent = parent;
@@ -45,6 +51,13 @@ namespace margelo::nitro::cssnitro {
                 if (!std::holds_alternative<std::monostate>(result)) {
                     return result;
                 }
+            } else {
+                // Variable doesn't exist in this context, create a new Observable with nullptr
+                auto observable = reactnativecss::Observable<AnyValue>::create(AnyValue());
+                valueMap[name] = observable;
+
+                // Subscribe to the observable by calling get()
+                get(*observable);
             }
         }
         return std::nullopt;
@@ -159,13 +172,13 @@ namespace margelo::nitro::cssnitro {
     }
 
     void VariableContext::setTopLevelVariable(const std::string &key, const std::string &name,
-                                              const std::vector<HybridRootVariableRule> &value) {
-        // Create a new Computed that returns "yellow" for now
+                                              const AnyValue &value) {
+        // Create a new Computed that returns the provided value
         auto computed = reactnativecss::Computed<AnyValue>::create(
-                [](const AnyValue &prev, reactnativecss::Effect::GetProxy &get) -> AnyValue {
+                [value](const AnyValue &prev, reactnativecss::Effect::GetProxy &get) -> AnyValue {
                     (void) prev;
                     (void) get;
-                    return AnyValue("yellow");
+                    return value;
                 },
                 AnyValue() // Initial value
         );

@@ -71,10 +71,30 @@ namespace margelo::nitro::cssnitro {
         });
     }
 
-    void HybridStyleRegistry::setRootVariable(const std::string &name,
-                                              const std::vector<HybridRootVariableRule> &value) {
-        // Call setTopLevelVariable with key="root"
-        VariableContext::setTopLevelVariable("root", name, value);
+    void HybridStyleRegistry::setRootVariables(const std::shared_ptr<AnyMap> &variables) {
+        VariableContext::createContext("root", "root");
+
+        // Loop over all entries in the AnyMap
+        for (const auto &entry: variables->getMap()) {
+            const std::string &key = entry.first;
+            const AnyValue &value = entry.second;
+
+            // Call setTopLevelVariable with key="root"
+            VariableContext::setTopLevelVariable("root", key, value);
+        }
+    }
+
+    void HybridStyleRegistry::setUniversalVariables(const std::shared_ptr<AnyMap> &variables) {
+        VariableContext::createContext("universal", "root");
+
+        // Loop over all entries in the AnyMap
+        for (const auto &entry: variables->getMap()) {
+            const std::string &key = entry.first;
+            const AnyValue &value = entry.second;
+
+            // Call setTopLevelVariable with key="universal"
+            VariableContext::setTopLevelVariable("universal", key, value);
+        }
     }
 
     Declarations HybridStyleRegistry::getDeclarations(const std::string &componentId,

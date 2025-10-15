@@ -14,9 +14,6 @@ namespace margelo::nitro::cssnitro {
 
     using AnyValue = ::margelo::nitro::AnyValue;
 
-    // Forward declaration
-    struct HybridRootVariableRule;
-
     class VariableContext {
     public:
         // Value can be either Observable or Computed
@@ -52,9 +49,9 @@ namespace margelo::nitro::cssnitro {
         static void setVariable(const std::string &key, const std::string &name,
                                 std::shared_ptr<reactnativecss::Computed<AnyValue>> computed);
 
-        // Set a top-level variable (creates a Computed from HybridRootVariableRule)
+        // Set a top-level variable (creates a Computed from AnyValue)
         static void setTopLevelVariable(const std::string &key, const std::string &name,
-                                        const std::vector<HybridRootVariableRule> &value);
+                                        const AnyValue &value);
 
     private:
         VariableContext() = delete; // Static-only class
