@@ -4,11 +4,13 @@
 #include "Rules.hpp"
 #include "Helpers.hpp"
 #include "StyleFunction.hpp"
+#include "Specificity.hpp"
 
 #include <regex>
 #include <variant>
 #include <vector>
 #include <string>
+#include <algorithm>
 #include <folly/dynamic.h>
 #include <NitroModules/AnyMap.hpp>
 
@@ -35,6 +37,9 @@ namespace margelo::nitro::cssnitro {
                      */
                     std::unordered_map<std::string, AnyValue> mergedStyles;
 
+                    // Collect all style rules from all classNames
+                    std::vector<HybridStyleRule> allStyleRules;
+
                     std::regex whitespace{"\\s+"};
                     std::sregex_token_iterator tokenIt(classNames.begin(), classNames.end(),
                                                        whitespace, -1);
@@ -53,43 +58,53 @@ namespace margelo::nitro::cssnitro {
 
                         const std::vector<HybridStyleRule> &styleRules = get(*styleIt->second);
 
-                        for (const HybridStyleRule &styleRule: styleRules) {
-                            // Skip rule if its media conditions don't pass
-                            if (!Rules::testRule(styleRule, get)) {
-                                continue;
-                            }
+                        // Add all style rules to the collection
+                        allStyleRules.insert(allStyleRules.end(), styleRules.begin(),
+                                             styleRules.end());
+                    }
 
-                            if (styleRule.d.has_value()) {
-                                const auto declarations = styleRule.d.value();
-                                const auto &dStyles = std::get<0>(std::get<0>(declarations));
-                                for (const auto &kv: dStyles->getMap()) {
-                                    // Only set if key doesn't already exist
-                                    if (mergedStyles.count(kv.first) == 0) {
-                                        // if kv.second is an array with "fn" as the first key, resolve it
-                                        if (dStyles->isArray(kv.first)) {
-                                            const auto &arr = dStyles->getArray(kv.first);
-                                            if (!arr.empty() &&
-                                                std::holds_alternative<std::string>(arr[0]) &&
-                                                std::get<std::string>(arr[0]) == "fn") {
-                                                auto result = StyleFunction::resolveStyleFn(
-                                                        arr, get, variableScope);
+                    // Sort all style rules by specificity (highest specificity first)
+                    std::sort(allStyleRules.begin(), allStyleRules.end(),
+                              [](const HybridStyleRule &a, const HybridStyleRule &b) {
+                                  return Specificity::sort(a.s, b.s);
+                              });
 
-                                                // Skip if resolveStyleFn returns nullptr
-                                                if (std::holds_alternative<std::monostate>(
-                                                        result)) {
-                                                    continue;
-                                                }
+                    // Now process the sorted style rules
+                    for (const HybridStyleRule &styleRule: allStyleRules) {
+                        // Skip rule if its media conditions don't pass
+                        if (!Rules::testRule(styleRule, get)) {
+                            continue;
+                        }
 
-                                                mergedStyles[kv.first] = result;
+                        if (styleRule.d.has_value()) {
+                            const auto declarations = styleRule.d.value();
+                            const auto &dStyles = std::get<0>(std::get<0>(declarations));
+                            for (const auto &kv: dStyles->getMap()) {
+                                // Only set if key doesn't already exist
+                                if (mergedStyles.count(kv.first) == 0) {
+                                    // if kv.second is an array with "fn" as the first key, resolve it
+                                    if (dStyles->isArray(kv.first)) {
+                                        const auto &arr = dStyles->getArray(kv.first);
+                                        if (!arr.empty() &&
+                                            std::holds_alternative<std::string>(arr[0]) &&
+                                            std::get<std::string>(arr[0]) == "fn") {
+                                            auto result = StyleFunction::resolveStyleFn(
+                                                    arr, get, variableScope);
+
+                                            // Skip if resolveStyleFn returns nullptr
+                                            if (std::holds_alternative<std::monostate>(
+                                                    result)) {
                                                 continue;
                                             }
-                                        }
-                                        mergedStyles[kv.first] = kv.second;
-                                    }
-                                }
-                                // Ignore the other entries for now
 
+                                            mergedStyles[kv.first] = result;
+                                            continue;
+                                        }
+                                    }
+                                    mergedStyles[kv.first] = kv.second;
+                                }
                             }
+                            // Ignore the other entries for now
                         }
                     }
 

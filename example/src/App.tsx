@@ -1,6 +1,6 @@
 import { StyleSheet, View } from "react-native";
 
-import { multiply, StyleRegistry } from "react-native-css-nitro";
+import { multiply, specificity, StyleRegistry } from "react-native-css-nitro";
 import { Text } from "react-native-css-nitro/components/Text";
 
 StyleRegistry.addStyleSheet({
@@ -8,15 +8,23 @@ StyleRegistry.addStyleSheet({
     [
       "text-red-500",
       [
-        { s: [], d: [{ color: "red" }] },
+        { s: specificity({ className: 1 }), d: [{ color: "red" }] },
         {
-          s: [],
+          s: specificity({ className: 2 }),
           d: [{ color: "green" }],
           m: { orientation: ["=", "landscape"] },
         },
       ],
     ],
-    ["text-[--test]", [{ s: [], d: [{ color: ["fn", "var", "test"] }] }]],
+    [
+      "text-[--test]",
+      [
+        {
+          s: specificity({ className: 3 }),
+          d: [{ color: ["fn", "var", "test"] }],
+        },
+      ],
+    ],
   ],
 });
 
@@ -24,7 +32,7 @@ export default function App() {
   return (
     <View style={styles.container}>
       <Text
-        className="text-[--test] text-red-500"
+        className="text-red-500 text-[--test]"
         onPress={() => {
           console.log("Pressed!");
           StyleRegistry.setRootVariables({

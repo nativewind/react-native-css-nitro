@@ -131,4 +131,4 @@ interface HybridStyleRule {
   m?: AnyMap;
 }
 
-type SpecificityArray = number[];
+export type SpecificityArray = [number, number, number, number, number];
