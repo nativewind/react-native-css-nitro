@@ -27,7 +27,8 @@ namespace margelo::nitro::cssnitro {
     struct HybridStyleRegistry::Impl {
         Impl();
 
-        void set(const std::string &className, const std::vector<HybridStyleRule> &styleRule);
+        void
+        setClassname(const std::string &className, const std::vector<HybridStyleRule> &styleRule);
 
         void addStyleSheet(const HybridStyleSheet &stylesheet);
 
@@ -97,9 +98,9 @@ namespace margelo::nitro::cssnitro {
 
     HybridStyleRegistry::~HybridStyleRegistry() = default;
 
-    void HybridStyleRegistry::set(const std::string &className,
-                                  const std::vector<HybridStyleRule> &styleRule) {
-        impl_->set(className, styleRule);
+    void HybridStyleRegistry::setClassname(const std::string &className,
+                                           const std::vector<HybridStyleRule> &styleRule) {
+        impl_->setClassname(className, styleRule);
     }
 
     void HybridStyleRegistry::addStyleSheet(const HybridStyleSheet &stylesheet) {
@@ -173,8 +174,8 @@ namespace margelo::nitro::cssnitro {
         shadowUpdates_ = std::make_unique<ShadowTreeUpdateManager>();
     }
 
-    void HybridStyleRegistry::Impl::set(const std::string &className,
-                                        const std::vector<HybridStyleRule> &styleRules) {
+    void HybridStyleRegistry::Impl::setClassname(const std::string &className,
+                                                 const std::vector<HybridStyleRule> &styleRules) {
         // Reverse the style rules, this way later on we can bail early if values are already set
         auto reversedRules = styleRules;
         std::reverse(reversedRules.begin(), reversedRules.end());
@@ -201,8 +202,8 @@ namespace margelo::nitro::cssnitro {
                     const std::string &className = std::get<0>(entry);
                     const std::vector<HybridStyleRule> &styleRule = std::get<1>(entry);
 
-                    // Call set with a vector containing the single styleRule
-                    set(className, styleRule);
+                    // Call setClassname with a vector containing the single styleRule
+                    setClassname(className, styleRule);
                 }
             }
         });

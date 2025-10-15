@@ -36,8 +36,8 @@ namespace margelo::nitro::cssnitro {
         using SelectorAndArgs = std::tuple<std::string, std::vector<std::string>>;
 
         // ----- public API forwarded to Impl -----
-        void set(const std::string &className,
-                 const std::vector<HybridStyleRule> &styleRule) override;
+        void setClassname(const std::string &className,
+                          const std::vector<HybridStyleRule> &styleRule) override;
 
         void addStyleSheet(const HybridStyleSheet &stylesheet) override;
 

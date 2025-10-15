@@ -6,7 +6,7 @@ export type HybridStyleRegistry = StyleRegistry & RawStyleRegistry;
 
 export interface StyleRegistry
   extends HybridObject<{ ios: "c++"; android: "c++" }> {
-  set(className: string, styleRule: HybridStyleRule[]): void;
+  setClassname(classname: string, styleRule: HybridStyleRule[]): void;
   addStyleSheet(stylesheet: HybridStyleSheet): void;
   getDeclarations(
     componentId: string,
