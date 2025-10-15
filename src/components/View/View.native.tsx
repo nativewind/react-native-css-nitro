@@ -1,42 +1,45 @@
 import { useId } from "react";
-import { View as RNView, type ViewProps } from "react-native";
+import { Pressable, View as RNView, type ViewProps } from "react-native";
 
+import { useElement } from "../../native/useElement";
 import { useRef } from "../../native/useRef";
-import { useStyled } from "../../native/useStyled";
+import { useStyledProps } from "../../native/useStyled";
 import { StyleRegistry } from "../../specs/StyleRegistry";
 import { copyComponentProperties, getDeepKeys } from "../../utils";
 
-export const View = copyComponentProperties(RNView, (props: ViewProps) => {
-  const componentId = useId();
+export const View = copyComponentProperties(
+  RNView,
+  (originalProps: ViewProps) => {
+    let p = originalProps as Record<string, any>;
+    const componentId = useId();
+    const ref = useRef(componentId, p.ref);
+    const next = useStyledProps(componentId, p.className, p);
 
-  const style = useStyled(
-    componentId,
-    (props as Record<string, string>).className,
-    props,
-  );
+    if (p.style) {
+      StyleRegistry.updateComponentInlineStyleKeys(
+        componentId,
+        getDeepKeys(p.style),
+      );
+    }
 
-  const ref = useRef(componentId, (props as Record<string, any>).ref);
+    p = {
+      ...next.props,
+      ...p,
+      ...next.importantProps,
+      ref,
+      style:
+        next.style || next.importantStyle
+          ? [next.style, p.style, next.importantStyle]
+          : p.style,
+    };
 
-  if (props.style) {
-    StyleRegistry.updateComponentInlineStyleKeys(
+    return useElement(
+      next.declarations.active || next.declarations.hover ? Pressable : RNView,
       componentId,
-      getDeepKeys(props.style),
+      next,
+      p,
     );
-  }
-
-  return (
-    <RNView
-      {...style.props}
-      {...props}
-      {...style.importantProps}
-      ref={ref}
-      style={
-        style.style || style.importantStyle
-          ? [style.style, props.style, style.importantStyle]
-          : props.style
-      }
-    />
-  );
-});
+  },
+);
 
 export default View;

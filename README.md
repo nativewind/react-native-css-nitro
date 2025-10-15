@@ -27,7 +27,7 @@ These are the features that are "done". Only basic testing as been performed.
 - [ ] Style target prop
 - [ ] Metro
 - [ ] Update compiler to new syntax
-- [ ] Upgrading elements
+- [x] Upgrading elements
 - [ ] Animations
 - [ ] Transitions
 - [ ] Important styles

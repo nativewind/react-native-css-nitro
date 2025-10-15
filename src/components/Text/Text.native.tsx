@@ -2,14 +2,14 @@ import { useId } from "react";
 import { Text as RNText, type TextProps } from "react-native";
 
 import { useRef } from "../../native/useRef";
-import { useStyled } from "../../native/useStyled";
+import { useStyledProps } from "../../native/useStyled";
 import { StyleRegistry } from "../../specs/StyleRegistry";
 import { copyComponentProperties, getDeepKeys } from "../../utils";
 
 export const Text = copyComponentProperties(RNText, (props: TextProps) => {
   const componentId = useId();
 
-  const style = useStyled(
+  const style = useStyledProps(
     componentId,
     (props as Record<string, string>).className,
     props,

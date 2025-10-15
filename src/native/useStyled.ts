@@ -4,14 +4,13 @@ import type { AnyMap } from "react-native-nitro-modules";
 
 import { StyleRegistry, type Declarations } from "../specs/StyleRegistry";
 import { ContainerContext, VariableContext } from "./contexts";
-import { useHandlers } from "./useHandlers";
 
 const EMPTY_DECLARATIONS: Declarations = { classNames: "" };
 
-export function useStyled(
+export function useStyledProps(
   componentId: string,
   className: string | undefined,
-  props: Record<string, any>,
+  originalProps: Record<string, any>,
   isDisabled = false,
 ) {
   const [instance, rerender] = useReducer(() => ({}), {});
@@ -32,7 +31,7 @@ export function useStyled(
 
   if (declarations.requiresRuntimeCheck) {
     for (const entry of declarations.requiresRuntimeCheck) {
-      if (entry[1](componentId, props as AnyMap, isDisabled)) {
+      if (entry[1](componentId, originalProps as AnyMap, isDisabled)) {
         validClassNames += " " + entry[0];
       }
     }
@@ -41,7 +40,7 @@ export function useStyled(
   // Update the variable scope after we have retrieved the declarations, so it uses its own scope
   variableScope = declarations.variableScope ?? variableScope;
 
-  let styled = useMemo(() => {
+  const props = useMemo(() => {
     if (!validClassNames) {
       return {};
     }
@@ -65,7 +64,10 @@ export function useStyled(
     [componentId],
   );
 
-  styled = useHandlers(componentId, props, declarations, styled);
-
-  return styled;
+  return {
+    ...props,
+    declarations,
+    variableScope: variableScope,
+    containerScope,
+  };
 }

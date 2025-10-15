@@ -6,7 +6,7 @@ import type { Math } from "./specs/Math.nitro";
 export { StyleRegistry } from "./specs/StyleRegistry";
 export type * from "./specs/StyleRegistry";
 
-export { useStyled } from "./native/useStyled";
+export { useStyledProps as useStyled } from "./native/useStyled";
 export * from "./native/specificity";
 
 const CssNitroHybridObject =
