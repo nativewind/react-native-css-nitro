@@ -23,9 +23,10 @@ namespace margelo::nitro::cssnitro {
             const std::string &classNames,
             const std::string &componentId,
             ShadowTreeUpdateManager &shadowUpdates,
-            const std::string &variableScope) {
+            const std::string &variableScope,
+            const std::string &containerScope) {
         auto computed = reactnativecss::Computed<Styled>::create(
-                [&styleRuleMap, classNames, componentId, &shadowUpdates, variableScope](
+                [&styleRuleMap, classNames, componentId, &shadowUpdates, variableScope, containerScope](
                         const Styled &prev,
                         typename reactnativecss::Effect::GetProxy &get) {
                     (void) prev;
@@ -72,7 +73,7 @@ namespace margelo::nitro::cssnitro {
                     // Now process the sorted style rules
                     for (const HybridStyleRule &styleRule: allStyleRules) {
                         // Skip rule if its media conditions don't pass
-                        if (!Rules::testRule(styleRule, get, componentId)) {
+                        if (!Rules::testRule(styleRule, get, componentId, containerScope)) {
                             continue;
                         }
 

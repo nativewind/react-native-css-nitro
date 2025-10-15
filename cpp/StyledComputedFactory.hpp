@@ -20,6 +20,7 @@ namespace margelo::nitro::cssnitro {
             const std::string &classNames,
             const std::string &componentId,
             ShadowTreeUpdateManager &shadowUpdates,
-            const std::string &variableScope);
+            const std::string &variableScope,
+            const std::string &containerScope);
 
 } // namespace margelo::nitro::cssnitro

@@ -5,6 +5,8 @@ import { NitroModules } from "react-native-nitro-modules";
 import type { StyleRule } from "../../compiler/types";
 import type { HybridStyleRegistry } from "./HybridStyleRegistry.nitro";
 
+export type * from "./HybridStyleRegistry.nitro";
+
 export const StyleRegistry = NitroModules.createHybridObject<
   Omit<HybridStyleRegistry, keyof JSStyleRegistry> & JSStyleRegistry
 >("HybridStyleRegistry");

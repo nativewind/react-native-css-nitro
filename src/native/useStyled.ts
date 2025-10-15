@@ -2,12 +2,9 @@ import { use, useEffect, useMemo, useReducer } from "react";
 
 import type { AnyMap } from "react-native-nitro-modules";
 
-import { StyleRegistry } from "../specs/StyleRegistry";
-import type {
-  Declarations,
-  PseudoClassType,
-} from "../specs/StyleRegistry/HybridStyleRegistry.nitro";
+import { StyleRegistry, type Declarations } from "../specs/StyleRegistry";
 import { ContainerContext, VariableContext } from "./contexts";
+import { useHandlers } from "./useHandlers";
 
 const EMPTY_DECLARATIONS: Declarations = { classNames: "" };
 
@@ -41,8 +38,8 @@ export function useStyled(
     }
   }
 
+  // Update the variable scope after we have retrieved the declarations, so it uses its own scope
   variableScope = declarations.variableScope ?? variableScope;
-  containerScope = declarations.containerScope ?? containerScope;
 
   let styled = useMemo(() => {
     if (!validClassNames) {
@@ -58,6 +55,9 @@ export function useStyled(
     );
   }, [componentId, instance, validClassNames, variableScope, containerScope]);
 
+  // Update the container scope after we have registered the component, so it doesn't use its own scope
+  containerScope = declarations.containerScope ?? containerScope;
+
   useEffect(
     () => () => {
       StyleRegistry.deregisterComponent(componentId);
@@ -65,99 +65,7 @@ export function useStyled(
     [componentId],
   );
 
-  if (
-    declarations.pressable ||
-    declarations.container ||
-    declarations.active ||
-    declarations.focus ||
-    declarations.hover
-  ) {
-    styled = { ...styled };
-    styled.importantProps = { ...styled.importantProps };
-    const p = styled.importantProps as Record<string, unknown>;
-
-    if (declarations.active) {
-      p.onPress = getInteractionHandler(componentId, "onPress", props, true);
-      p.onPressIn = getInteractionHandler(
-        componentId,
-        "onPressIn",
-        props,
-        true,
-      );
-      p.onPressOut = getInteractionHandler(
-        componentId,
-        "onPressOut",
-        props,
-        false,
-      );
-    }
-
-    if (declarations.hover) {
-      p.onHoverIn = getInteractionHandler(
-        componentId,
-        "onHoverIn",
-        props,
-        true,
-      );
-      p.onHoverOut = getInteractionHandler(
-        componentId,
-        "onHoverOut",
-        props.onHoverOut,
-        false,
-      );
-    }
-
-    if (declarations.focus) {
-      p.onFocus = getInteractionHandler(componentId, "onFocus", props, true);
-      p.onBlur = getInteractionHandler(componentId, "onBlur", props, false);
-    }
-  }
+  styled = useHandlers(componentId, props, declarations, styled);
 
   return styled;
-}
-
-const cache = new WeakMap<WeakKey, (event: unknown) => void>();
-function getInteractionHandler(
-  componentId: string,
-  type:
-    | "onPress"
-    | "onPressIn"
-    | "onPressOut"
-    | "onHoverIn"
-    | "onHoverOut"
-    | "onFocus"
-    | "onBlur",
-  props: Record<string, any> | null | undefined,
-  value: boolean,
-) {
-  const inlineHandler = props?.[type];
-
-  const pseudoClass: PseudoClassType = type.includes("Press")
-    ? "active"
-    : type.includes("Hover")
-      ? "hover"
-      : "focus";
-
-  if (!inlineHandler) {
-    return () => {
-      if (type !== "onPress") {
-        StyleRegistry.updateComponentState(componentId, pseudoClass, value);
-      }
-    };
-  }
-
-  const cached = cache.get(inlineHandler);
-  if (cached) {
-    return cached;
-  }
-
-  const handler = (event: unknown) => {
-    inlineHandler(event);
-    if (type !== "onPress") {
-      StyleRegistry.updateComponentState(componentId, pseudoClass, value);
-    }
-  };
-
-  cache.set(inlineHandler, handler);
-  return handler;
 }

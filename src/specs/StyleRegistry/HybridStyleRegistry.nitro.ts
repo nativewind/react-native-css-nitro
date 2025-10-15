@@ -1,4 +1,4 @@
-import type { processColor } from "react-native";
+import type { LayoutRectangle, processColor } from "react-native";
 
 import type { AnyMap, HybridObject } from "react-native-nitro-modules";
 
@@ -33,6 +33,7 @@ export interface StyleRegistry
     type: PseudoClassType,
     value: boolean,
   ): void;
+  updateComponentLayout(componentId: string, value: LayoutRectangle): void;
   unlinkComponent(componentId: string): void;
 
   setWindowDimensions(
@@ -109,6 +110,9 @@ interface HybridStyleRule {
   s: SpecificityArray;
   v?: AnyMap;
 
+  /** Container Names */
+  c?: string[];
+
   /** Declarations */
   d?: [AnyMap] | [AnyMap, AnyMap?];
 
@@ -117,6 +121,9 @@ interface HybridStyleRule {
 
   /** MediaQuery */
   m?: AnyMap;
+
+  /** ContainerQuery */
+  cq?: ContainerQuery[];
 }
 
 export type SpecificityArray = [number, number, number, number, number];
@@ -125,5 +132,12 @@ interface PseudoClass {
   a?: boolean; // active
   f?: boolean; // focus
   h?: boolean; // hover
-  d?: boolean; // disabled
+}
+
+interface ContainerQuery {
+  /** Name */
+  n?: string;
+  m?: AnyMap;
+  p?: PseudoClass;
+  // a?: AttributeQuery[];
 }

@@ -4,6 +4,8 @@ import type { CssNitro } from "./CssNitro.nitro";
 import type { Math } from "./specs/Math.nitro";
 
 export { StyleRegistry } from "./specs/StyleRegistry";
+export type * from "./specs/StyleRegistry";
+
 export { useStyled } from "./native/useStyled";
 export * from "./native/specificity";
 

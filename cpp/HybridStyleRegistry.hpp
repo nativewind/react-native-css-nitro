@@ -61,6 +61,9 @@ namespace margelo::nitro::cssnitro {
         void updateComponentState(const std::string &componentId, PseudoClassType type,
                                   bool value) override;
 
+        void updateComponentLayout(const std::string &componentId,
+                                   const LayoutRectangle &value) override;
+
         void unlinkComponent(const std::string &componentId) override;
 
         void updateComponentInlineStyleKeys(const std::string &componentId,

@@ -1,5 +1,6 @@
 #include "HybridStyleRegistry.hpp"
 #include "Computed.hpp"
+#include "ContainerContext.hpp"
 #include "Observable.hpp"
 #include "ShadowTreeUpdateManager.hpp"
 #include "StyledComputedFactory.hpp"
@@ -174,7 +175,8 @@ namespace margelo::nitro::cssnitro {
         auto computed = ::margelo::nitro::cssnitro::makeStyledComputed(styleRuleMap_, classNames,
                                                                        componentId,
                                                                        *shadowUpdates_,
-                                                                       variableScope);
+                                                                       variableScope,
+                                                                       containerScope);
 
         computedMap_[componentId] = computed;
 
@@ -194,6 +196,12 @@ namespace margelo::nitro::cssnitro {
     void HybridStyleRegistry::updateComponentState(const std::string &componentId,
                                                    PseudoClassType type, bool value) {
         PseudoClasses::set(componentId, type, value);
+    }
+
+    void HybridStyleRegistry::updateComponentLayout(const std::string &componentId,
+                                                    const margelo::nitro::cssnitro::LayoutRectangle &value) {
+
+        ContainerContext::setLayout(componentId, value.x, value.y, value.width, value.height);
     }
 
     void HybridStyleRegistry::unlinkComponent(const std::string &componentId) {
