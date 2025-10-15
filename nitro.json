@@ -8,6 +8,13 @@
     "androidCxxLibName": "cssnitro"
   },
   "autolinking": {
+    "CssNitro": {
+      "swift": "CssNitro",
+      "kotlin": "CssNitro"
+    },
+    "Math": {
+      "cpp": "HybridMath"
+    },
     "HybridStyleRegistry": {
       "cpp": "HybridStyleRegistry"
     }

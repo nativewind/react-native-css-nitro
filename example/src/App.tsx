@@ -1,6 +1,6 @@
 import { StyleSheet, View } from "react-native";
 
-import { specificity, StyleRegistry } from "react-native-css-nitro";
+import { multiply, specificity, StyleRegistry } from "react-native-css-nitro";
 import { Text } from "react-native-css-nitro/components/Text";
 
 StyleRegistry.addStyleSheet({
@@ -42,7 +42,7 @@ export default function App() {
           console.log("Pressed!");
         }}
       >
-        Hello, World!
+        Multiply: {multiply(3, 7)}
       </Text>
     </View>
   );
