@@ -72,7 +72,7 @@ namespace margelo::nitro::cssnitro {
                     // Now process the sorted style rules
                     for (const HybridStyleRule &styleRule: allStyleRules) {
                         // Skip rule if its media conditions don't pass
-                        if (!Rules::testRule(styleRule, get)) {
+                        if (!Rules::testRule(styleRule, get, componentId)) {
                             continue;
                         }
 

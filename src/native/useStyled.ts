@@ -5,7 +5,7 @@ import type { AnyMap } from "react-native-nitro-modules";
 import { StyleRegistry } from "../specs/StyleRegistry";
 import type {
   Declarations,
-  Styled,
+  PseudoClassType,
 } from "../specs/StyleRegistry/HybridStyleRegistry.nitro";
 import { ContainerContext, VariableContext } from "./contexts";
 
@@ -56,7 +56,7 @@ export function useStyled(
       variableScope,
       containerScope,
     );
-  }, [componentId, instance, containerScope, validClassNames, variableScope]);
+  }, [componentId, instance, validClassNames, variableScope, containerScope]);
 
   useEffect(
     () => () => {
@@ -77,27 +77,39 @@ export function useStyled(
     const p = styled.importantProps as Record<string, unknown>;
 
     if (declarations.active) {
-      p.onPress = getInteractionHandler("onPress", styled, props);
-      p.onPressIn = getInteractionHandler("onPressIn", styled, props);
+      p.onPress = getInteractionHandler(componentId, "onPress", props, true);
+      p.onPressIn = getInteractionHandler(
+        componentId,
+        "onPressIn",
+        props,
+        true,
+      );
       p.onPressOut = getInteractionHandler(
+        componentId,
         "onPressOut",
-        styled,
-        props.onPressOut,
+        props,
+        false,
       );
     }
 
     if (declarations.hover) {
-      p.onHoverIn = getInteractionHandler("onHoverIn", styled, props.onHoverIn);
+      p.onHoverIn = getInteractionHandler(
+        componentId,
+        "onHoverIn",
+        props,
+        true,
+      );
       p.onHoverOut = getInteractionHandler(
+        componentId,
         "onHoverOut",
-        styled,
         props.onHoverOut,
+        false,
       );
     }
 
     if (declarations.focus) {
-      p.onFocus = getInteractionHandler("onFocus", styled, props.onFocus);
-      p.onBlur = getInteractionHandler("onBlur", styled, props.onBlur);
+      p.onFocus = getInteractionHandler(componentId, "onFocus", props, true);
+      p.onBlur = getInteractionHandler(componentId, "onBlur", props, false);
     }
   }
 
@@ -106,13 +118,32 @@ export function useStyled(
 
 const cache = new WeakMap<WeakKey, (event: unknown) => void>();
 function getInteractionHandler(
-  type: Parameters<(typeof StyleRegistry)["updateComponentState"]>[1],
-  styled: Styled,
-  props: Record<string, any>,
+  componentId: string,
+  type:
+    | "onPress"
+    | "onPressIn"
+    | "onPressOut"
+    | "onHoverIn"
+    | "onHoverOut"
+    | "onFocus"
+    | "onBlur",
+  props: Record<string, any> | null | undefined,
+  value: boolean,
 ) {
-  const inlineHandler = props[type];
+  const inlineHandler = props?.[type];
+
+  const pseudoClass: PseudoClassType = type.includes("Press")
+    ? "active"
+    : type.includes("Hover")
+      ? "hover"
+      : "focus";
+
   if (!inlineHandler) {
-    return styled[type];
+    return () => {
+      if (type !== "onPress") {
+        StyleRegistry.updateComponentState(componentId, pseudoClass, value);
+      }
+    };
   }
 
   const cached = cache.get(inlineHandler);
@@ -122,7 +153,9 @@ function getInteractionHandler(
 
   const handler = (event: unknown) => {
     inlineHandler(event);
-    styled[type]?.();
+    if (type !== "onPress") {
+      StyleRegistry.updateComponentState(componentId, pseudoClass, value);
+    }
   };
 
   cache.set(inlineHandler, handler);

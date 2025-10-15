@@ -14,6 +14,7 @@
 #include "HybridStyleRule.hpp"
 #include "Environment.hpp"
 #include "Helpers.hpp"
+#include "PseudoClasses.hpp"
 #include <NitroModules/AnyMap.hpp>
 
 namespace margelo::nitro::cssnitro {
@@ -24,14 +25,24 @@ namespace margelo::nitro::cssnitro {
 
     class Rules {
     public:
-        static bool testRule(const HybridStyleRule &rule, reactnativecss::Effect::GetProxy &get) {
-            // If m is not defined, return true
-            if (!rule.m.has_value() || !rule.m.value()) {
-                return true;
+        static bool testRule(const HybridStyleRule &rule, reactnativecss::Effect::GetProxy &get,
+                             const std::string &componentId) {
+            // Check pseudo-classes first (rule.p)
+            if (rule.p.has_value()) {
+                if (!testPseudoClasses(rule.p.value(), componentId, get)) {
+                    return false;
+                }
             }
 
-            auto &mediaMap = *rule.m.value();
-            return testMediaMap(mediaMap, get);
+            // Check media queries (rule.m)
+            if (rule.m.has_value() && rule.m.value()) {
+                auto &mediaMap = *rule.m.value();
+                if (!testMediaMap(mediaMap, get)) {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         static bool
@@ -43,6 +54,43 @@ namespace margelo::nitro::cssnitro {
         }
 
     private:
+        /**
+         * Test if pseudo-class conditions match.
+         * Returns false if any pseudo-class doesn't match the expected state.
+         */
+        static bool
+        testPseudoClasses(const PseudoClass &pseudoClass, const std::string &componentId,
+                          reactnativecss::Effect::GetProxy &get) {
+            // Check active state
+            if (pseudoClass.a.has_value()) {
+                bool expectedActive = pseudoClass.a.value();
+                bool actualActive = PseudoClasses::get(componentId, PseudoClassType::ACTIVE, get);
+                if (actualActive != expectedActive) {
+                    return false;
+                }
+            }
+
+            // Check hover state
+            if (pseudoClass.h.has_value()) {
+                bool expectedHover = pseudoClass.h.value();
+                bool actualHover = PseudoClasses::get(componentId, PseudoClassType::HOVER, get);
+                if (actualHover != expectedHover) {
+                    return false;
+                }
+            }
+
+            // Check focus state
+            if (pseudoClass.f.has_value()) {
+                bool expectedFocus = pseudoClass.f.value();
+                bool actualFocus = PseudoClasses::get(componentId, PseudoClassType::FOCUS, get);
+                if (actualFocus != expectedFocus) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
         static bool testMediaMap(const AnyMap &mediaMap, reactnativecss::Effect::GetProxy &get) {
             // Get all keys to check if empty
             auto keys = mediaMap.getAllKeys();

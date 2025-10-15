@@ -5,6 +5,7 @@
 #include "StyledComputedFactory.hpp"
 #include "Environment.hpp"
 #include "VariableContext.hpp"
+#include "PseudoClasses.hpp"
 
 #include <regex>
 #include <string>
@@ -121,14 +122,33 @@ namespace margelo::nitro::cssnitro {
             const std::vector<HybridStyleRule> &styleRules = styleIt->second->get();
             bool hasVars = false;
             for (const auto &sr: styleRules) {
+                // Check for variables
                 if (sr.v.has_value()) {
                     hasVars = true;
-                    break;
+                }
+
+                // Check for pseudo-classes
+                if (sr.p.has_value()) {
+                    const auto &pseudoClass = sr.p.value();
+
+                    // Check if active pseudo-class is set
+                    if (pseudoClass.a.has_value()) {
+                        declarations.active = true;
+                    }
+
+                    // Check if hover pseudo-class is set
+                    if (pseudoClass.h.has_value()) {
+                        declarations.hover = true;
+                    }
+
+                    // Check if focus pseudo-class is set
+                    if (pseudoClass.f.has_value()) {
+                        declarations.focus = true;
+                    }
                 }
             }
             if (hasVars) {
                 declarations.variableScope = componentId;
-                break;
             }
         }
 
@@ -172,8 +192,8 @@ namespace margelo::nitro::cssnitro {
     }
 
     void HybridStyleRegistry::updateComponentState(const std::string &componentId,
-                                                   UpdateComponentStateFns type) {
-        // TODO: Implement this
+                                                   PseudoClassType type, bool value) {
+        PseudoClasses::set(componentId, type, value);
     }
 
     void HybridStyleRegistry::unlinkComponent(const std::string &componentId) {

@@ -58,8 +58,8 @@ namespace margelo::nitro::cssnitro {
 
         void deregisterComponent(const std::string &componentId) override;
 
-        void updateComponentState(const std::string &componentId,
-                                  UpdateComponentStateFns type) override;
+        void updateComponentState(const std::string &componentId, PseudoClassType type,
+                                  bool value) override;
 
         void unlinkComponent(const std::string &componentId) override;
 

@@ -30,7 +30,8 @@ export interface StyleRegistry
   ): void;
   updateComponentState(
     componentId: string,
-    type: UpdateComponentStateFns,
+    type: PseudoClassType,
+    value: boolean,
   ): void;
   unlinkComponent(componentId: string): void;
 
@@ -76,25 +77,9 @@ export interface Styled {
   importantStyle?: AnyMap;
   props?: AnyMap;
   importantProps?: AnyMap;
-  jsSubscriptionId?: number;
-  shadowTreeDependencies?: string[];
-  onPress?: () => void;
-  onPressIn?: () => void;
-  onPressOut?: () => void;
-  onHoverIn?: () => void;
-  onHoverOut?: () => void;
-  onFocus?: () => void;
-  onBlur?: () => void;
 }
 
-type UpdateComponentStateFns =
-  | "onPress"
-  | "onPressIn"
-  | "onPressOut"
-  | "onHoverIn"
-  | "onHoverOut"
-  | "onFocus"
-  | "onBlur";
+export type PseudoClassType = "active" | "hover" | "focus";
 
 export type StyleConfig = [
   source: string,
@@ -127,8 +112,18 @@ interface HybridStyleRule {
   /** Declarations */
   d?: [AnyMap] | [AnyMap, AnyMap?];
 
+  /** PseudoClass */
+  p?: PseudoClass;
+
   /** MediaQuery */
   m?: AnyMap;
 }
 
 export type SpecificityArray = [number, number, number, number, number];
+
+interface PseudoClass {
+  a?: boolean; // active
+  f?: boolean; // focus
+  h?: boolean; // hover
+  d?: boolean; // disabled
+}

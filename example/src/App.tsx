@@ -22,10 +22,15 @@ StyleRegistry.addStyleSheet({
         {
           s: specificity({ className: 3 }),
           d: [{ color: ["fn", "var", "test"] }],
+          p: { a: true },
         },
       ],
     ],
   ],
+});
+
+StyleRegistry.setRootVariables({
+  test: [{ v: "pink" }],
 });
 
 export default function App() {
@@ -35,9 +40,6 @@ export default function App() {
         className="text-red-500 text-[--test]"
         onPress={() => {
           console.log("Pressed!");
-          StyleRegistry.setRootVariables({
-            test: [{ v: "pink", m: { orientation: ["=", "portrait"] } }],
-          });
         }}
       >
         Multiply: {multiply(3, 7)}
