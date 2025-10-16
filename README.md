@@ -47,3 +47,6 @@ These are the features that are "done", in that they pass basic testing. More co
 - [ ] Shorthand runtime styles
 - [ ] Native component wrappers (e.g TextInput, ScrollView, etc)
 - [ ] 3rd party hook (nativeStyleToProp, etc)
+- [ ] Safe area units
+- [ ] Em
+- [ ] `currentColor`
