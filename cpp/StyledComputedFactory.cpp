@@ -39,6 +39,7 @@ namespace margelo::nitro::cssnitro {
                      * So we use an unordered_map and convert it to AnyMap at the end.
                      */
                     std::unordered_map<std::string, AnyValue> mergedStyles;
+                    std::unordered_map<std::string, AnyValue> mergedProps;
 
                     // Collect all style rules from all classNames
                     std::vector<HybridStyleRule> allStyleRules;
@@ -81,34 +82,89 @@ namespace margelo::nitro::cssnitro {
                         }
 
                         if (styleRule.d.has_value()) {
-                            const auto declarations = styleRule.d.value();
-                            const auto &dStyles = std::get<0>(std::get<0>(declarations));
-                            for (const auto &kv: dStyles->getMap()) {
-                                // Only set if key doesn't already exist
-                                if (mergedStyles.count(kv.first) == 0) {
-                                    // if kv.second is an array with "fn" as the first key, resolve it
-                                    if (dStyles->isArray(kv.first)) {
-                                        const auto &arr = dStyles->getArray(kv.first);
-                                        if (!arr.empty() &&
-                                            std::holds_alternative<std::string>(arr[0]) &&
-                                            std::get<std::string>(arr[0]) == "fn") {
-                                            auto result = StyleFunction::resolveStyleFn(
-                                                    arr, get, variableScope);
+                            const auto &declarations = styleRule.d.value();
 
-                                            // Skip if resolveStyleFn returns nullptr
-                                            if (std::holds_alternative<std::monostate>(
-                                                    result)) {
-                                                continue;
+                            // declarations is a variant that can hold either:
+                            // - tuple with 1 item (single declaration)
+                            // - tuple with 2 items (multiple declarations)
+                            // We use std::visit to safely access it
+                            std::visit([&mergedStyles, &mergedProps, &get, &variableScope](
+                                    const auto &decl) {
+                                // decl is a tuple, get the first element (the styles)
+                                const auto &dStyles = std::get<0>(decl);
+
+                                // Check if dStyles is valid before accessing
+                                if (dStyles) {
+                                    for (const auto &kv: dStyles->getMap()) {
+                                        // Only set if key doesn't already exist
+                                        if (mergedStyles.count(kv.first) == 0) {
+                                            // if kv.second is an array with "fn" as the first key, resolve it
+                                            if (dStyles->isArray(kv.first)) {
+                                                const auto &arr = dStyles->getArray(kv.first);
+                                                if (!arr.empty() &&
+                                                    std::holds_alternative<std::string>(
+                                                            arr[0]) &&
+                                                    std::get<std::string>(arr[0]) == "fn") {
+                                                    auto result = StyleFunction::resolveStyleFn(
+                                                            arr, get, variableScope);
+
+                                                    // Skip if resolveStyleFn returns nullptr
+                                                    if (std::holds_alternative<std::monostate>(
+                                                            result)) {
+                                                        return;
+                                                    }
+
+                                                    mergedStyles[kv.first] = result;
+                                                    return;
+                                                }
                                             }
-
-                                            mergedStyles[kv.first] = result;
-                                            continue;
+                                            mergedStyles[kv.first] = kv.second;
                                         }
                                     }
-                                    mergedStyles[kv.first] = kv.second;
                                 }
-                            }
-                            // Ignore the other entries for now
+
+                                // Check if there's a second element in the tuple (props)
+                                if constexpr (std::tuple_size<std::decay_t<decltype(decl)>>::value >
+                                              1) {
+                                    const auto &dPropsOpt = std::get<1>(decl);
+
+                                    // dPropsOpt is optional, check if it has a value
+                                    if (dPropsOpt.has_value()) {
+                                        const auto &dProps = dPropsOpt.value();
+
+                                        // Check if dProps is valid before accessing
+                                        if (dProps) {
+                                            for (const auto &kv: dProps->getMap()) {
+                                                // Only set if key doesn't already exist
+                                                if (mergedProps.count(kv.first) == 0) {
+                                                    // if kv.second is an array with "fn" as the first key, resolve it
+                                                    if (dProps->isArray(kv.first)) {
+                                                        const auto &arr = dProps->getArray(
+                                                                kv.first);
+                                                        if (!arr.empty() &&
+                                                            std::holds_alternative<std::string>(
+                                                                    arr[0]) &&
+                                                            std::get<std::string>(arr[0]) == "fn") {
+                                                            auto result = StyleFunction::resolveStyleFn(
+                                                                    arr, get, variableScope);
+
+                                                            // Skip if resolveStyleFn returns nullptr
+                                                            if (std::holds_alternative<std::monostate>(
+                                                                    result)) {
+                                                                continue;
+                                                            }
+
+                                                            mergedProps[kv.first] = result;
+                                                            continue;
+                                                        }
+                                                    }
+                                                    mergedProps[kv.first] = kv.second;
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }, declarations);
                         }
                     }
 
@@ -126,19 +182,21 @@ namespace margelo::nitro::cssnitro {
 
                         for (const auto &kv: mergedStyles) {
                             if (transformProps.count(kv.first) > 0) {
-                                if (!anyMap->contains("transform")) {
-                                    anyMap->setArray("transform", AnyArray{});
-                                }
+                                AnyArray transformArray;
 
-                                auto transformArray = anyMap->getArray("transform");
+                                // Get existing transform array if it exists
+                                if (anyMap->contains("transform")) {
+                                    transformArray = anyMap->getArray("transform");
+                                }
 
                                 // find the value in the array with the key matching kv.first and set it to kv.second
                                 bool foundTransform = false;
-                                for (auto &item: transformArray) {
-                                    if (std::holds_alternative<AnyObject>(item)) {
-                                        auto &obj = std::get<AnyObject>(item);
+                                for (size_t i = 0; i < transformArray.size(); i++) {
+                                    if (std::holds_alternative<AnyObject>(transformArray[i])) {
+                                        auto obj = std::get<AnyObject>(transformArray[i]);
                                         if (obj.count(kv.first) > 0) {
                                             obj[kv.first] = kv.second;
+                                            transformArray[i] = obj;
                                             foundTransform = true;
                                             break;
                                         }
@@ -159,6 +217,16 @@ namespace margelo::nitro::cssnitro {
                             anyMap->setAny(kv.first, kv.second);
                         }
                         next.style = anyMap;
+                    }
+
+                    // Convert mergedProps to AnyMap and set next.props
+                    if (!mergedProps.empty()) {
+                        auto anyMap = AnyMap::make(mergedProps.size());
+
+                        for (const auto &kv: mergedProps) {
+                            anyMap->setAny(kv.first, kv.second);
+                        }
+                        next.props = anyMap;
                     }
 
                     if (shouldRerender(next)) {
