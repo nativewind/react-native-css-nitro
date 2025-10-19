@@ -39,9 +39,8 @@ These are the features that are "done", in that they pass basic testing. More co
 - [ ] Metro
 - [ ] Update compiler to new syntax (switch tuples to objects)
 - [x] Upgrading elements
-- [ ] Upgrading elements warning
 - [ ] Animations
-- [ ] Transitions
+- [x] Transitions
 - [ ] Important styles
 - [ ] Important props
 - [ ] Shorthand runtime styles

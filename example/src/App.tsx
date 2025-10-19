@@ -13,20 +13,28 @@ StyleRegistry.addStyleSheet({
           d: [
             {
               color: "red",
-              transitionProperty: "color",
-              transitionDuration: "5s",
+              // transitionProperty: "color",
+              // transitionDuration: "5s",
+            },
+            {
+              selectionColor: "green",
             },
           ],
         },
-        {
-          s: specificity({ className: 4 }),
-          d: [{ color: "purple" }],
-          aq: { a: [["true", "disabled"]] },
-        },
+        // {
+        //   s: specificity({ className: 4 }),
+        //   d: [{ color: ["fn", "var", "my-custom-color"] }, { color: "blue" }],
+        //   aq: { a: [["true", "disabled"]] },
+        // },
       ],
     ],
   ],
 });
+
+// StyleRegistry.setRootVariables({
+//   "my-custom-color": ["fn", "var", "second-color"],
+//   "second-color": "green",
+// });
 
 export default function App() {
   return (
