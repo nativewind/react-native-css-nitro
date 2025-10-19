@@ -1,16 +1,21 @@
-export function copyComponentProperties(Component: any, StyledComponent: any) {
-  Object.entries(Component).forEach(([key, value]) => {
+import type { ComponentType } from "react";
+
+export function copyComponentProperties<P1, P2>(
+  Component: ComponentType<P1>,
+  StyledComponent: ComponentType<P2>,
+) {
+  Object.entries(Component as Record<string, any>).forEach(([key, value]) => {
     // Filter out the keys we don't want to copy
     if (["$$typeof", "render"].includes(key)) {
       return;
     }
 
-    StyledComponent[key] = value;
+    StyledComponent[key as keyof ComponentType<P2>] = value;
   });
 
   StyledComponent.displayName = Component.displayName;
 
-  return StyledComponent;
+  return StyledComponent as ComponentType<P1 & P2>;
 }
 
 export function getDeepKeys(obj: unknown, keys = new Set<string>()): string[] {

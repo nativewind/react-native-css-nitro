@@ -23,7 +23,8 @@ namespace margelo::nitro::cssnitro {
             const std::function<void()> &rerender,
             ShadowTreeUpdateManager &shadowUpdates,
             const std::string &variableScope,
-            const std::string &containerScope);
+            const std::string &containerScope,
+            const std::vector<std::string> &validAttributeQueries);
 
     bool shouldRerender(const Styled &styled);
 

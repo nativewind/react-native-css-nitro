@@ -167,5 +167,8 @@
     "languages": "kotlin-swift",
     "type": "nitro-module",
     "version": "0.54.3"
+  },
+  "dependencies": {
+    "react-native-reanimated": "^4.1.3"
   }
 }

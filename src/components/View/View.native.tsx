@@ -1,19 +1,22 @@
-import { useId } from "react";
-import { Pressable, View as RNView, type ViewProps } from "react-native";
+import { useId, type ComponentProps } from "react";
+import { Pressable } from "react-native";
+
+import { createAnimatedComponent } from "react-native-reanimated";
 
 import { useElement } from "../../native/useElement";
-import { useRef } from "../../native/useRef";
+import { useDualRefs } from "../../native/useRef";
 import { useStyledProps } from "../../native/useStyled";
 import { StyleRegistry } from "../../specs/StyleRegistry";
 import { copyComponentProperties, getDeepKeys } from "../../utils";
 
+const AnimatedView = createAnimatedComponent(Pressable);
+
 export const View = copyComponentProperties(
-  RNView,
-  (originalProps: ViewProps) => {
-    let p = originalProps as Record<string, any>;
+  AnimatedView,
+  (p: ComponentProps<typeof AnimatedView> & { className?: string }) => {
     const componentId = useId();
-    const next = useStyledProps(componentId, p.className, p);
-    const ref = useRef(componentId, p.ref);
+    const styled = useStyledProps(componentId, p.className, p);
+    const ref = useDualRefs(componentId, p.ref);
 
     if (p.style) {
       StyleRegistry.updateComponentInlineStyleKeys(
@@ -22,23 +25,16 @@ export const View = copyComponentProperties(
       );
     }
 
-    p = {
-      ...next.props,
+    return useElement(AnimatedView, styled, {
+      ...styled.props,
       ...p,
-      ...next.importantProps,
+      ...styled.importantProps,
       ref,
       style:
-        next.style || next.importantStyle
-          ? [next.style, p.style, next.importantStyle]
+        styled.style || styled.importantStyle
+          ? [styled.style, p.style, styled.importantStyle]
           : p.style,
-    };
-
-    return useElement(
-      next.declarations.active || next.declarations.hover ? Pressable : RNView,
-      componentId,
-      next,
-      p,
-    );
+    });
   },
 );
 

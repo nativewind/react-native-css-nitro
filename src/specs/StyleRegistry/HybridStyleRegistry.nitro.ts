@@ -2,6 +2,8 @@ import type { LayoutRectangle, processColor } from "react-native";
 
 import type { AnyMap, HybridObject } from "react-native-nitro-modules";
 
+import type { AttributeQuery } from "../../compiler/types";
+
 export type HybridStyleRegistry = StyleRegistry & RawStyleRegistry;
 
 export interface StyleRegistry
@@ -22,6 +24,7 @@ export interface StyleRegistry
     classNames: string,
     variableScope: string,
     containerScope: string,
+    validAttributeQueries: string[],
   ): Styled;
   deregisterComponent(componentId: string): void;
   updateComponentInlineStyleKeys(
@@ -55,23 +58,13 @@ export interface RawStyleRegistry {
 /*******************************    States    *********************************/
 
 export interface Declarations {
-  classNames: string;
   variableScope?: string;
   containerScope?: string;
-  pressable?: boolean;
-  container?: boolean;
-  animated?: boolean;
   active?: boolean;
   focus?: boolean;
   hover?: boolean;
-  requiresRuntimeCheck?: [string, RuntimeGuard][];
+  attributeQueries?: [string, AttributeQuery][];
 }
-
-type RuntimeGuard = (
-  componentId: string,
-  props: AnyMap,
-  isDisabled: boolean,
-) => boolean;
 
 export interface Styled {
   style?: AnyMap;
@@ -107,6 +100,7 @@ export interface HybridStyleSheet {
 /******************************    StyleRule    *******************************/
 
 interface HybridStyleRule {
+  id?: string;
   s: SpecificityArray;
   v?: AnyMap;
 
@@ -124,6 +118,9 @@ interface HybridStyleRule {
 
   /** ContainerQuery */
   cq?: ContainerQuery[];
+
+  /** ContainerQuery */
+  aq?: AttributeQuery;
 }
 
 export type SpecificityArray = [number, number, number, number, number];

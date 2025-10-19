@@ -54,7 +54,8 @@ namespace margelo::nitro::cssnitro {
         Styled
         registerComponent(const std::string &componentId, const std::function<void()> &rerender,
                           const std::string &classNames, const std::string &variableScope,
-                          const std::string &containerScope) override;
+                          const std::string &containerScope,
+                          const std::vector<std::string> &validAttributeQueries) override;
 
         void deregisterComponent(const std::string &componentId) override;
 
@@ -88,6 +89,7 @@ namespace margelo::nitro::cssnitro {
         static std::unique_ptr<ShadowTreeUpdateManager> shadowUpdates_;
         static std::unordered_map<std::string, std::shared_ptr<reactnativecss::Computed<Styled>>> computedMap_;
         static std::unordered_map<std::string, std::shared_ptr<reactnativecss::Observable<std::vector<HybridStyleRule>>>> styleRuleMap_;
+        static std::atomic<uint64_t> nextStyleRuleId_;
     };
 
 } // namespace margelo::nitro::cssnitro

@@ -275,7 +275,7 @@ namespace margelo::nitro::cssnitro {
                                     }
 
                                     // Test the rule - if it doesn't pass, continue to next item
-                                    if (!Rules::testRule(mediaMap, get)) {
+                                    if (!Rules::testVariableMedia(mediaMap, get)) {
                                         continue;
                                     }
                                     // If it passes, fall through to return the "v" value

@@ -32,6 +32,7 @@ namespace margelo::nitro::cssnitro {
             std::make_unique<ShadowTreeUpdateManager>();
     std::unordered_map<std::string, std::shared_ptr<reactnativecss::Computed<Styled>>> HybridStyleRegistry::computedMap_;
     std::unordered_map<std::string, std::shared_ptr<reactnativecss::Observable<std::vector<HybridStyleRule>>>> HybridStyleRegistry::styleRuleMap_;
+    std::atomic<uint64_t> HybridStyleRegistry::nextStyleRuleId_{1};
 
     // Constructor, Destructor, and Method Implementations
     HybridStyleRegistry::HybridStyleRegistry() : HybridObject("HybridStyleRegistry") {}
@@ -40,8 +41,18 @@ namespace margelo::nitro::cssnitro {
 
     void HybridStyleRegistry::setClassname(const std::string &className,
                                            const std::vector<HybridStyleRule> &styleRules) {
+        // Create a copy of the style rules to modify them
+        auto rulesWithIds = styleRules;
+
+        // Assign unique IDs to any rules that don't have one
+        for (auto &rule: rulesWithIds) {
+            if (!rule.id.has_value()) {
+                rule.id = std::to_string(nextStyleRuleId_++);
+            }
+        }
+
         // Reverse the style rules, this way later on we can bail early if values are already set
-        auto reversedRules = styleRules;
+        auto reversedRules = rulesWithIds;
         std::reverse(reversedRules.begin(), reversedRules.end());
 
         auto it = styleRuleMap_.find(className);
@@ -102,12 +113,13 @@ namespace margelo::nitro::cssnitro {
                                                       const std::string &variableScope,
                                                       const std::string &containerScope) {
         Declarations declarations;
-        declarations.classNames = classNames;
         declarations.variableScope = variableScope;
 
         std::regex whitespace{"\\s+"};
         std::sregex_token_iterator tokenIt(classNames.begin(), classNames.end(), whitespace, -1);
         std::sregex_token_iterator end;
+
+        std::vector<std::tuple<std::string, AttributeQuery>> attributeQueriesVec;
 
         for (; tokenIt != end; ++tokenIt) {
             const std::string className = tokenIt->str();
@@ -123,6 +135,12 @@ namespace margelo::nitro::cssnitro {
             const std::vector<HybridStyleRule> &styleRules = styleIt->second->get();
             bool hasVars = false;
             for (const auto &sr: styleRules) {
+                // Check for attribute queries
+                if (sr.aq.has_value() && sr.id.has_value()) {
+                    // The style rule id is already a string
+                    attributeQueriesVec.emplace_back(sr.id.value(), sr.aq.value());
+                }
+
                 // Check for variables
                 if (sr.v.has_value()) {
                     hasVars = true;
@@ -153,6 +171,11 @@ namespace margelo::nitro::cssnitro {
             }
         }
 
+        // Set attributeQueries if we found any
+        if (!attributeQueriesVec.empty()) {
+            declarations.attributeQueries = std::move(attributeQueriesVec);
+        }
+
         return declarations;
     }
 
@@ -161,7 +184,8 @@ namespace margelo::nitro::cssnitro {
                                            const std::function<void()> &rerender,
                                            const std::string &classNames,
                                            const std::string &variableScope,
-                                           const std::string &containerScope) {
+                                           const std::string &containerScope,
+                                           const std::vector<std::string> &validAttributeQueries) {
         if (auto existing = computedMap_.find(componentId); existing != computedMap_.end()) {
             if (existing->second) {
                 existing->second->dispose();
@@ -177,7 +201,8 @@ namespace margelo::nitro::cssnitro {
                                                                        rerender,
                                                                        *shadowUpdates_,
                                                                        variableScope,
-                                                                       containerScope);
+                                                                       containerScope,
+                                                                       validAttributeQueries);
 
         computedMap_[componentId] = computed;
 

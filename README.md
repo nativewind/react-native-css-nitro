@@ -28,7 +28,7 @@ These are the features that are "done", in that they pass basic testing. More co
 - [ ] Filter
 - [x] Pseudo classes
 - [x] Media query
-- [ ] Attribute selectors
+- [x] Attribute selectors
 - [x] Container named queries
 - [x] Container media queries
 - [ ] Container attribute queries

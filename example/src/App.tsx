@@ -8,40 +8,30 @@ StyleRegistry.addStyleSheet({
     [
       "text-red-500",
       [
-        { s: specificity({ className: 1 }), d: [{ color: "red" }] },
         {
-          s: specificity({ className: 2 }),
-          d: [{ color: "green" }],
-          m: { orientation: ["=", "landscape"] },
+          s: specificity({ className: 1 }),
+          d: [
+            {
+              color: "red",
+              transitionProperty: "all",
+              transitionDuration: "5s",
+            },
+          ],
         },
-      ],
-    ],
-    [
-      "text-[--test]",
-      [
         {
-          s: specificity({ className: 3 }),
-          d: [{ color: ["fn", "var", "test"] }],
-          p: { a: true },
+          s: specificity({ className: 4 }),
+          d: [{ color: "purple" }],
+          aq: { a: [["true", "disabled"]] },
         },
       ],
     ],
   ],
 });
 
-StyleRegistry.setRootVariables({
-  test: [{ v: "pink" }],
-});
-
 export default function App() {
   return (
     <View style={styles.container}>
-      <Text
-        className="text-red-500 text-[--test]"
-        onPress={() => {
-          console.log("Pressed!");
-        }}
-      >
+      <Text className="text-red-500" style={{ fontSize: 30 }}>
         Multiply: {multiply(3, 7)}
       </Text>
     </View>

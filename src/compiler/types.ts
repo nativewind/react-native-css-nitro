@@ -108,17 +108,30 @@ export type VariableDescriptor = [string, StyleDescriptor];
 
 /***************************    Attribute Query    ****************************/
 
-type AttributeQueryType =
-  | "a" // Attribute
-  | "d"; // Data-Attribute
+export interface AttributeQuery {
+  // Attribute
+  a?: AttributeQueryRule[];
+  // Data-Attribute
+  d?: AttributeQueryRule[];
+}
 
-export type AttributeQuery =
-  | [AttributeQueryType, string] // Exists
-  | [AttributeQueryType, string, "!"] // Falsy
-  | [AttributeQueryType, string, AttrSelectorOperator, string] // Use operator
-  | [AttributeQueryType, string, AttrSelectorOperator, string, "i" | "s"]; // Case sensitivity
+export type AttributeQueryRule =
+  | [AttrSelectorBooleanOperator, string]
+  | [AttrSelectorOperator, string, string | number, AttrCaseFlag?];
 
-export type AttrSelectorOperator = "=" | "~=" | "|=" | "^=" | "$=" | "*=";
+export type AttrSelectorBooleanOperator = "true" | "false";
+
+export type AttrSelectorOperator =
+  | "true"
+  | "false"
+  | "eq"
+  | "tilde"
+  | "pipe"
+  | "carat"
+  | "dollar"
+  | "star";
+
+type AttrCaseFlag = "i" | "s";
 
 /******************************    Containers    *****************************/
 

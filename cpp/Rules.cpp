@@ -13,8 +13,25 @@
 namespace margelo::nitro::cssnitro {
 
     bool Rules::testRule(const HybridStyleRule &rule, reactnativecss::Effect::GetProxy &get,
-                         const std::string &componentId, const std::string &containerScope) {
-        // Check pseudo-classes first (rule.p)
+                         const std::string &componentId, const std::string &containerScope,
+                         const std::vector<std::string> &validAttributeQueries) {
+        // Check attribute queries (rule.aq)
+        if (rule.aq.has_value()) {
+            if (!rule.id.has_value()) {
+                return false;
+            }
+
+            // The rule ID is already a string, use it directly
+            const std::string &ruleId = rule.id.value();
+
+            // Use std::find to search the vector
+            if (std::find(validAttributeQueries.begin(), validAttributeQueries.end(), ruleId) ==
+                validAttributeQueries.end()) {
+                return false;
+            }
+        }
+
+        // Check pseudo-classes (rule.p)
         if (rule.p.has_value()) {
             if (!testPseudoClasses(rule.p.value(), componentId, get)) {
                 return false;
@@ -40,8 +57,8 @@ namespace margelo::nitro::cssnitro {
         return true;
     }
 
-    bool Rules::testRule(const std::shared_ptr<AnyMap> &mediaMap,
-                         reactnativecss::Effect::GetProxy &get) {
+    bool Rules::testVariableMedia(const std::shared_ptr<AnyMap> &mediaMap,
+                                  reactnativecss::Effect::GetProxy &get) {
         if (!mediaMap) {
             return true;
         }

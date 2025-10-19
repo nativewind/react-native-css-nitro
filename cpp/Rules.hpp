@@ -27,10 +27,12 @@ namespace margelo::nitro::cssnitro {
     class Rules {
     public:
         static bool testRule(const HybridStyleRule &rule, reactnativecss::Effect::GetProxy &get,
-                             const std::string &componentId, const std::string &containerScope);
+                             const std::string &componentId, const std::string &containerScope,
+                             const std::vector<std::string> &validAttributeQueries);
 
         static bool
-        testRule(const std::shared_ptr<AnyMap> &mediaMap, reactnativecss::Effect::GetProxy &get);
+        testVariableMedia(const std::shared_ptr<AnyMap> &mediaMap,
+                          reactnativecss::Effect::GetProxy &get);
 
     private:
         static bool

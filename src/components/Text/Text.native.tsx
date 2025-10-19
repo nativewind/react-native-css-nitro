@@ -1,7 +1,7 @@
 import { useId } from "react";
 import { Text as RNText, type TextProps } from "react-native";
 
-import { useRef } from "../../native/useRef";
+import { useDualRefs } from "../../native/useRef";
 import { useStyledProps } from "../../native/useStyled";
 import { StyleRegistry } from "../../specs/StyleRegistry";
 import { copyComponentProperties, getDeepKeys } from "../../utils";
@@ -15,7 +15,7 @@ export const Text = copyComponentProperties(RNText, (props: TextProps) => {
     props,
   );
 
-  const ref = useRef(componentId, (props as Record<string, any>).ref);
+  const ref = useDualRefs(componentId, (props as Record<string, any>).ref);
 
   if (props.style) {
     StyleRegistry.updateComponentInlineStyleKeys(

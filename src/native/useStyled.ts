@@ -1,11 +1,11 @@
 import { use, useEffect, useMemo, useReducer } from "react";
 
-import type { AnyMap } from "react-native-nitro-modules";
-
 import { StyleRegistry, type Declarations } from "../specs/StyleRegistry";
+import { testAttributeQuery } from "./attributeQuery";
 import { ContainerContext, VariableContext } from "./contexts";
 
-const EMPTY_DECLARATIONS: Declarations = { classNames: "" };
+const EMPTY_DECLARATIONS: Declarations = {};
+const REDUCER = <T>(state: T) => ({ ...state });
 
 export function useStyledProps(
   componentId: string,
@@ -13,7 +13,7 @@ export function useStyledProps(
   originalProps: Record<string, any>,
   isDisabled = false,
 ) {
-  const [instance, rerender] = useReducer(() => ({}), {});
+  const [instance, rerender] = useReducer(REDUCER, EMPTY_DECLARATIONS);
 
   let variableScope = use(VariableContext);
   let containerScope = use(ContainerContext);
@@ -27,12 +27,12 @@ export function useStyledProps(
       )
     : EMPTY_DECLARATIONS;
 
-  let validClassNames = declarations.classNames;
+  let validAttributeQueryIds = "";
 
-  if (declarations.requiresRuntimeCheck) {
-    for (const entry of declarations.requiresRuntimeCheck) {
-      if (entry[1](componentId, originalProps as AnyMap, isDisabled)) {
-        validClassNames += " " + entry[0];
+  if (declarations.attributeQueries) {
+    for (const [id, query] of declarations.attributeQueries) {
+      if (testAttributeQuery(originalProps, query, isDisabled)) {
+        validAttributeQueryIds += id + " ";
       }
     }
   }
@@ -40,22 +40,43 @@ export function useStyledProps(
   // Update the variable scope after we have retrieved the declarations, so it uses its own scope
   variableScope = declarations.variableScope ?? variableScope;
 
-  const props = useMemo(() => {
-    if (!validClassNames) {
+  const componentData = useMemo(() => {
+    if (!className) {
       return {};
     }
+
+    console.log("validAttributeQueries before", validAttributeQueryIds);
+
+    const validAttributeQueries = validAttributeQueryIds.split(" ");
+    // Remove the trailing empty string
+    validAttributeQueries.pop();
+
+    console.log("validAttributeQueries", validAttributeQueries);
 
     return StyleRegistry.registerComponent(
       componentId,
       rerender,
-      validClassNames,
+      className,
       variableScope,
       containerScope,
+      validAttributeQueries,
     );
-  }, [componentId, instance, validClassNames, variableScope, containerScope]);
+  }, [
+    componentId,
+    className,
+    variableScope,
+    containerScope,
+    validAttributeQueryIds,
+    // This is not used, but if the registry fires a rerender it will have a different identity
+    instance,
+  ]);
 
   // Update the container scope after we have registered the component, so it doesn't use its own scope
   containerScope = declarations.containerScope ?? containerScope;
+
+  const p: Record<string, unknown> = {
+    ...componentData.importantProps,
+  };
 
   useEffect(
     () => () => {
@@ -64,10 +85,62 @@ export function useStyledProps(
     [componentId],
   );
 
+  if (declarations.active) {
+    p.onPress =
+      p.onPress ??
+      (() => {
+        return;
+      });
+    p.onPressIn = onPressIn(componentId, p);
+    p.onPressOut = onPressOut(componentId, p);
+  }
+
+  if (declarations.hover) {
+    p.onHoverIn = onHoverIn(componentId, p);
+    p.onHoverOut = onHoverOut(componentId, p);
+  }
+
+  if (declarations.focus) {
+    p.onFocus = onFocus(componentId, p);
+    p.onBlur = onBlur(componentId, p);
+  }
+
   return {
-    ...props,
-    declarations,
-    variableScope: variableScope,
+    props: componentData.props,
+    importantProps: p,
+    style: componentData.style,
+    importantStyle: componentData.importantStyle,
+    variableScope,
     containerScope,
   };
 }
+
+const onPressIn = (id: string, props: Record<string, any>) => () => {
+  props.onPressIn?.();
+  StyleRegistry.updateComponentState(id, "active", true);
+};
+
+const onPressOut = (id: string, props: Record<string, any>) => () => {
+  props.onPressIn?.();
+  StyleRegistry.updateComponentState(id, "active", false);
+};
+
+const onHoverIn = (id: string, props: Record<string, any>) => () => {
+  props.onHoverIn?.();
+  StyleRegistry.updateComponentState(id, "hover", true);
+};
+
+const onHoverOut = (id: string, props: Record<string, any>) => () => {
+  props.onHoverOut?.();
+  StyleRegistry.updateComponentState(id, "hover", false);
+};
+
+const onFocus = (id: string, props: Record<string, any>) => () => {
+  props.onFocus?.();
+  StyleRegistry.updateComponentState(id, "focus", true);
+};
+
+const onBlur = (id: string, props: Record<string, any>) => () => {
+  props.onBlur?.();
+  StyleRegistry.updateComponentState(id, "focus", false);
+};

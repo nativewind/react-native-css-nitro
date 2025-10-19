@@ -2,7 +2,7 @@ import { useCallback } from "react";
 
 import { StyleRegistry } from "../specs/StyleRegistry";
 
-export function useRef(componentId: string, existingRef?: any): any {
+export function useDualRefs(componentId: string, existingRef?: any): any {
   return useCallback(
     (handle: { __nativeTag?: number } | null) => {
       if (existingRef) {
