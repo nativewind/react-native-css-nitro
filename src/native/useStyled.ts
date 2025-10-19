@@ -45,13 +45,9 @@ export function useStyledProps(
       return {};
     }
 
-    console.log("validAttributeQueries before", validAttributeQueryIds);
-
     const validAttributeQueries = validAttributeQueryIds.split(" ");
     // Remove the trailing empty string
     validAttributeQueries.pop();
-
-    console.log("validAttributeQueries", validAttributeQueries);
 
     return StyleRegistry.registerComponent(
       componentId,

@@ -1,42 +1,47 @@
-import { useId } from "react";
-import { Text as RNText, type TextProps } from "react-native";
+import { useId, type ComponentProps, type Ref } from "react";
+import { Text as RNText } from "react-native";
 
+import { createAnimatedComponent } from "react-native-reanimated";
+
+import { useElement } from "../../native/useElement";
 import { useDualRefs } from "../../native/useRef";
 import { useStyledProps } from "../../native/useStyled";
 import { StyleRegistry } from "../../specs/StyleRegistry";
 import { copyComponentProperties, getDeepKeys } from "../../utils";
 
-export const Text = copyComponentProperties(RNText, (props: TextProps) => {
-  const componentId = useId();
+const AnimatedText = createAnimatedComponent(RNText);
 
-  const style = useStyledProps(
-    componentId,
-    (props as Record<string, string>).className,
-    props,
-  );
+export const Text = copyComponentProperties(
+  RNText,
+  (
+    p: ComponentProps<typeof AnimatedText> & {
+      className?: string;
+      ref?: Ref<RNText>;
+    },
+  ) => {
+    const componentId = useId();
+    const styled = useStyledProps(componentId, p.className, p);
 
-  const ref = useDualRefs(componentId, (props as Record<string, any>).ref);
+    const ref = useDualRefs(componentId, p.ref);
 
-  if (props.style) {
-    StyleRegistry.updateComponentInlineStyleKeys(
-      componentId,
-      getDeepKeys(props.style),
-    );
-  }
+    if (p.style) {
+      StyleRegistry.updateComponentInlineStyleKeys(
+        componentId,
+        getDeepKeys(p.style),
+      );
+    }
 
-  return (
-    <RNText
-      {...style.props}
-      {...props}
-      {...style.importantProps}
-      ref={ref}
-      style={
-        style.style || style.importantStyle
-          ? [style.style, props.style, style.importantStyle]
-          : props.style
-      }
-    />
-  );
-});
+    return useElement(AnimatedText, styled, {
+      ...styled.props,
+      ...p,
+      ...styled.importantProps,
+      ref,
+      style:
+        styled.style || styled.importantStyle
+          ? [styled.style, p.style, styled.importantStyle]
+          : p.style,
+    });
+  },
+);
 
 export default Text;

@@ -13,7 +13,7 @@ StyleRegistry.addStyleSheet({
           d: [
             {
               color: "red",
-              transitionProperty: "all",
+              transitionProperty: "color",
               transitionDuration: "5s",
             },
           ],
@@ -31,7 +31,7 @@ StyleRegistry.addStyleSheet({
 export default function App() {
   return (
     <View style={styles.container}>
-      <Text className="text-red-500" style={{ fontSize: 30 }}>
+      <Text className="text-red-500" style={{ fontSize: 30 }} disabled>
         Multiply: {multiply(3, 7)}
       </Text>
     </View>
