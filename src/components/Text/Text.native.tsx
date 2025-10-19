@@ -1,4 +1,4 @@
-import { useId, type ComponentProps, type Ref } from "react";
+import { useId, type ComponentPropsWithRef } from "react";
 import { Text as RNText } from "react-native";
 
 import { createAnimatedComponent } from "react-native-reanimated";
@@ -13,12 +13,7 @@ const AnimatedText = createAnimatedComponent(RNText);
 
 export const Text = copyComponentProperties(
   RNText,
-  (
-    p: ComponentProps<typeof AnimatedText> & {
-      className?: string;
-      ref?: Ref<RNText>;
-    },
-  ) => {
+  (p: ComponentPropsWithRef<typeof AnimatedText>) => {
     const componentId = useId();
     const styled = useStyledProps(componentId, p.className, p);
 

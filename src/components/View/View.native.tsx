@@ -13,7 +13,7 @@ const AnimatedView = createAnimatedComponent(Pressable);
 
 export const View = copyComponentProperties(
   AnimatedView,
-  (p: ComponentProps<typeof AnimatedView> & { className?: string }) => {
+  (p: ComponentProps<typeof AnimatedView>) => {
     const componentId = useId();
     const styled = useStyledProps(componentId, p.className, p);
     const ref = useDualRefs(componentId, p.ref);
