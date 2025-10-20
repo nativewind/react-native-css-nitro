@@ -30,16 +30,16 @@ These are the features that are "done", in that they pass basic testing. More co
 - [x] Container named queries
 - [x] Container media queries
 - [x] Dynamic Variables
+- [x] Inline Variables
 - [x] Global variables w/ media queries
-- [x] Transform
-- [ ] Filter
 - [ ] Animations
 - [x] Transitions
+- [x] Transform
+- [ ] Filter
 - [x] Important styles
 - [x] Important props
 - [ ] Safe area units
-- [ ] Em
-- [ ] `currentColor`
+- [ ] Em & `currentColor`
 - [ ] CSS functions (min, max, platform functions, etc)
 - [ ] Metro
 - [ ] Update compiler to new syntax (switch tuples to objects)

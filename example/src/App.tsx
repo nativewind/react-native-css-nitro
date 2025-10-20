@@ -10,6 +10,9 @@ StyleRegistry.addStyleSheet({
       [
         {
           s: specificity({ className: 1 }),
+          v: {
+            "my-custom-color": "yellow",
+          },
           d: [
             {
               color: ["fn", "var", "my-custom-color", "blue"],

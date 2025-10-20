@@ -6,6 +6,7 @@
 #include "StyleFunction.hpp"
 #include "Specificity.hpp"
 #include "StyleResolver.hpp"
+#include "VariableContext.hpp"
 
 #include <regex>
 #include <variant>
@@ -65,9 +66,13 @@ namespace margelo::nitro::cssnitro {
 
                         const std::vector<HybridStyleRule> &styleRules = get(*styleIt->second);
 
-                        // Add all style rules to the collection
-                        allStyleRules.insert(allStyleRules.end(), styleRules.begin(),
-                                             styleRules.end());
+                        // Add only style rules that pass the test
+                        for (const HybridStyleRule &styleRule: styleRules) {
+                            if (Rules::testRule(styleRule, get, componentId, containerScope,
+                                                validAttributeQueries)) {
+                                allStyleRules.push_back(styleRule);
+                            }
+                        }
                     }
 
                     // Sort all style rules by specificity (highest specificity first)
@@ -76,14 +81,19 @@ namespace margelo::nitro::cssnitro {
                                   return Specificity::sort(a.s, b.s);
                               });
 
-                    // Now process the sorted style rules
+                    // Process the inline variables
                     for (const HybridStyleRule &styleRule: allStyleRules) {
-                        // Skip rule if its conditions are not valid
-                        if (!Rules::testRule(styleRule, get, componentId, containerScope,
-                                             validAttributeQueries)) {
-                            continue;
+                        if (styleRule.v.has_value()) {
+                            const auto &inlineVariables = styleRule.v.value();
+                            for (const auto &kv: inlineVariables->getMap()) {
+                                VariableContext::setVariable(variableScope, kv.first, kv.second);
+                            }
                         }
 
+                    }
+
+                    // Process the declarations
+                    for (const HybridStyleRule &styleRule: allStyleRules) {
                         if (styleRule.d.has_value()) {
                             const auto &declarations = styleRule.d.value();
 
