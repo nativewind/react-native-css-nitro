@@ -1,46 +1,12 @@
-import { useId, type ComponentProps, type Ref } from "react";
-import { Text as RNText } from "react-native";
+import { Text as RNText, type TextProps } from "react-native";
 
-import { createAnimatedComponent } from "react-native-reanimated";
-
-import { useElement } from "../../native/useElement";
-import { useDualRefs } from "../../native/useRef";
-import { useStyledProps } from "../../native/useStyled";
-import { StyleRegistry } from "../../specs/StyleRegistry";
-import { copyComponentProperties, getDeepKeys } from "../../utils";
-
-const AnimatedText = createAnimatedComponent(RNText);
+import { copyComponentProperties } from "../../utils";
+import { useStyled } from "../../web/useStyled";
 
 export const Text = copyComponentProperties(
-  AnimatedText,
-  (
-    p: ComponentProps<typeof AnimatedText> & {
-      className?: string;
-      ref?: Ref<RNText>;
-    },
-  ) => {
-    const componentId = useId();
-    const styled = useStyledProps(componentId, p.className, p);
-    const ref = useDualRefs(componentId, p.ref);
-
-    if (p.style) {
-      StyleRegistry.updateComponentInlineStyleKeys(
-        componentId,
-        getDeepKeys(p.style),
-      );
-    }
-
-    return useElement(AnimatedText, styled, {
-      ...styled.props,
-      ...p,
-      ...styled.importantProps,
-      ref,
-      style:
-        styled.style || styled.importantStyle
-          ? [styled.style, p.style, styled.importantStyle]
-          : p.style,
-    });
+  RNText,
+  ({ className, style, ...props }: TextProps & { className?: string }) => {
+    const nextStyle = useStyled(className, style);
+    return <RNText {...props} style={nextStyle} />;
   },
 );
-
-export default Text;

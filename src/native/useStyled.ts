@@ -76,7 +76,7 @@ export function useStyledProps(
 
   useEffect(
     () => () => {
-      StyleRegistry.deregisterComponent(componentId);
+      // StyleRegistry.deregisterComponent(componentId);
     },
     [componentId],
   );

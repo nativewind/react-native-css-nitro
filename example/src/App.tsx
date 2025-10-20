@@ -9,7 +9,15 @@ StyleRegistry.addStyleSheet({
       "text-red-500",
       [
         {
-          s: specificity({ className: 1 }),
+          s: specificity({ className: 1, important: 1 }),
+          d: [
+            {
+              color: "green",
+            },
+          ],
+        },
+        {
+          s: specificity({ className: 2 }),
           d: [
             {
               color: "red",
@@ -40,7 +48,7 @@ export default function App() {
   return (
     <View style={styles.container}>
       <Text className="text-red-500" style={{ fontSize: 30 }} selectable>
-        Multiply: {multiply(3, 7)}
+        Multiply17: {multiply(3, 7)}
       </Text>
     </View>
   );

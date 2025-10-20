@@ -30,7 +30,7 @@ namespace margelo::nitro::cssnitro {
     // Initialize static members
     std::unique_ptr<ShadowTreeUpdateManager> HybridStyleRegistry::shadowUpdates_ =
             std::make_unique<ShadowTreeUpdateManager>();
-    std::unordered_map<std::string, std::shared_ptr<reactnativecss::Computed<Styled>>> HybridStyleRegistry::computedMap_;
+    std::unordered_map<std::string, std::shared_ptr<reactnativecss::Computed<Styled *>>> HybridStyleRegistry::computedMap_;
     std::unordered_map<std::string, std::shared_ptr<reactnativecss::Observable<std::vector<HybridStyleRule>>>> HybridStyleRegistry::styleRuleMap_;
     std::atomic<uint64_t> HybridStyleRegistry::nextStyleRuleId_{1};
 
@@ -206,7 +206,16 @@ namespace margelo::nitro::cssnitro {
 
         computedMap_[componentId] = computed;
 
-        return computed->get();
+        // Get the value from computed - it's a Styled* that may be nullptr
+        Styled *styledPtr = computed->get();
+
+        // If nullptr, return empty Styled{}
+        if (styledPtr == nullptr) {
+            return Styled{};
+        }
+
+        // Otherwise dereference and return the value
+        return *styledPtr;
     }
 
     void HybridStyleRegistry::deregisterComponent(const std::string &componentId) {

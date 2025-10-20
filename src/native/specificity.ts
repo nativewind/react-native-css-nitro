@@ -1,12 +1,12 @@
 import type { SpecificityArray } from "../specs/StyleRegistry/HybridStyleRegistry.nitro";
 
 const Specificity = {
-  order: 0,
-  className: 1,
-  important: 2,
-  inline: 3,
-  pseudoElements: 4,
-  pseudoClass: 1,
+  important: 0,
+  inline: 1,
+  pseudoElements: 2,
+  className: 3,
+  pseudoClass: 3,
+  order: 4,
   // Id: 0, - We don't support ID yet
   // StyleSheet: 0, - We don't support multiple stylesheets
 };

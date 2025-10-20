@@ -87,7 +87,7 @@ namespace margelo::nitro::cssnitro {
 
         // Static shared state
         static std::unique_ptr<ShadowTreeUpdateManager> shadowUpdates_;
-        static std::unordered_map<std::string, std::shared_ptr<reactnativecss::Computed<Styled>>> computedMap_;
+        static std::unordered_map<std::string, std::shared_ptr<reactnativecss::Computed<Styled *>>> computedMap_;
         static std::unordered_map<std::string, std::shared_ptr<reactnativecss::Observable<std::vector<HybridStyleRule>>>> styleRuleMap_;
         static std::atomic<uint64_t> nextStyleRuleId_;
     };
