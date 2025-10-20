@@ -85,9 +85,17 @@ namespace margelo::nitro::cssnitro {
                                            const jsi::Value &thisValue,
                                            const jsi::Value *args, size_t count);
 
+        // Struct to hold computed with its associated parameters
+        struct ComputedEntry {
+            std::shared_ptr<reactnativecss::Computed<Styled *>> computed;
+            std::string classNames;
+            std::string variableScope;
+            std::string containerScope;
+        };
+
         // Static shared state
         static std::unique_ptr<ShadowTreeUpdateManager> shadowUpdates_;
-        static std::unordered_map<std::string, std::shared_ptr<reactnativecss::Computed<Styled *>>> computedMap_;
+        static std::unordered_map<std::string, ComputedEntry> computedMap_;
         static std::unordered_map<std::string, std::shared_ptr<reactnativecss::Observable<std::vector<HybridStyleRule>>>> styleRuleMap_;
         static std::atomic<uint64_t> nextStyleRuleId_;
     };

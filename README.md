@@ -24,28 +24,26 @@ These are the features that are "done", in that they pass basic testing. More co
 - [x] Web
 - [x] Multiple style rules
 - [x] Specificity sorting
-- [x] Transform
-- [ ] Filter
 - [x] Pseudo classes
 - [x] Media query
 - [x] Attribute selectors
 - [x] Container named queries
 - [x] Container media queries
-- [ ] Container attribute queries
 - [x] Dynamic Variables
 - [x] Global variables w/ media queries
-- [ ] CSS functions (min, max, platform functions, etc)
-- [ ] Alt style props (e.g `headerStyle`)
-- [ ] Metro
-- [ ] Update compiler to new syntax (switch tuples to objects)
-- [x] Upgrading elements
+- [x] Transform
+- [ ] Filter
 - [ ] Animations
 - [x] Transitions
-- [ ] Important styles
-- [ ] Important props
-- [ ] Shorthand runtime styles
-- [ ] Native component wrappers (e.g TextInput, ScrollView, etc)
-- [ ] 3rd party hook (nativeStyleToProp, etc)
+- [x] Important styles
+- [x] Important props
 - [ ] Safe area units
 - [ ] Em
 - [ ] `currentColor`
+- [ ] CSS functions (min, max, platform functions, etc)
+- [ ] Metro
+- [ ] Update compiler to new syntax (switch tuples to objects)
+- [ ] Shorthand runtime styles
+- [ ] Native component wrappers (e.g TextInput, ScrollView, etc)
+- [ ] 3rd party hook (nativeStyleToProp, etc)
+- [ ] 3rd party Alt style props (e.g `headerStyle`)

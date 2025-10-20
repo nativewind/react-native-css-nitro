@@ -30,7 +30,7 @@ namespace margelo::nitro::cssnitro {
     // Initialize static members
     std::unique_ptr<ShadowTreeUpdateManager> HybridStyleRegistry::shadowUpdates_ =
             std::make_unique<ShadowTreeUpdateManager>();
-    std::unordered_map<std::string, std::shared_ptr<reactnativecss::Computed<Styled *>>> HybridStyleRegistry::computedMap_;
+    std::unordered_map<std::string, HybridStyleRegistry::ComputedEntry> HybridStyleRegistry::computedMap_;
     std::unordered_map<std::string, std::shared_ptr<reactnativecss::Observable<std::vector<HybridStyleRule>>>> HybridStyleRegistry::styleRuleMap_;
     std::atomic<uint64_t> HybridStyleRegistry::nextStyleRuleId_{1};
 
@@ -186,25 +186,51 @@ namespace margelo::nitro::cssnitro {
                                            const std::string &variableScope,
                                            const std::string &containerScope,
                                            const std::vector<std::string> &validAttributeQueries) {
-        if (auto existing = computedMap_.find(componentId); existing != computedMap_.end()) {
-            if (existing->second) {
-                existing->second->dispose();
+        // Check if an entry exists for this component
+        auto existing = computedMap_.find(componentId);
+
+        // Only recreate computed if parameters have changed or it doesn't exist
+        bool shouldRecreate = false;
+        if (existing == computedMap_.end()) {
+            shouldRecreate = true;
+        } else {
+            // Check if any of the parameters have changed
+            const auto &entry = existing->second;
+            if (entry.classNames != classNames ||
+                entry.variableScope != variableScope ||
+                entry.containerScope != containerScope) {
+                shouldRecreate = true;
             }
-            computedMap_.erase(existing);
         }
 
-        (void) rerender;
+        std::shared_ptr<reactnativecss::Computed<Styled *>> computed;
 
-        // Build computed Styled via factory
-        auto computed = ::margelo::nitro::cssnitro::makeStyledComputed(styleRuleMap_, classNames,
-                                                                       componentId,
-                                                                       rerender,
-                                                                       *shadowUpdates_,
-                                                                       variableScope,
-                                                                       containerScope,
-                                                                       validAttributeQueries);
+        if (shouldRecreate) {
+            // Dispose old computed if it exists
+            if (existing != computedMap_.end() && existing->second.computed) {
+                existing->second.computed->dispose();
+            }
 
-        computedMap_[componentId] = computed;
+            // Build new computed Styled via factory
+            computed = ::margelo::nitro::cssnitro::makeStyledComputed(styleRuleMap_, classNames,
+                                                                      componentId,
+                                                                      rerender,
+                                                                      *shadowUpdates_,
+                                                                      variableScope,
+                                                                      containerScope,
+                                                                      validAttributeQueries);
+
+            // Store the new computed with its parameters
+            computedMap_[componentId] = ComputedEntry{
+                    computed,
+                    classNames,
+                    variableScope,
+                    containerScope
+            };
+        } else {
+            // Reuse existing computed
+            computed = existing->second.computed;
+        }
 
         // Get the value from computed - it's a Styled* that may be nullptr
         Styled *styledPtr = computed->get();
@@ -221,8 +247,8 @@ namespace margelo::nitro::cssnitro {
     void HybridStyleRegistry::deregisterComponent(const std::string &componentId) {
         auto it = computedMap_.find(componentId);
         if (it != computedMap_.end()) {
-            if (it->second) {
-                it->second->dispose();
+            if (it->second.computed) {
+                it->second.computed->dispose();
             }
             computedMap_.erase(it);
         }
