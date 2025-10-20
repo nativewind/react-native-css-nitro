@@ -5,6 +5,7 @@
 #include "Helpers.hpp"
 #include "StyleFunction.hpp"
 #include "Specificity.hpp"
+#include "StyledResolver.hpp"
 
 #include <regex>
 #include <variant>
@@ -168,25 +169,16 @@ namespace margelo::nitro::cssnitro {
                 for (const auto &kv: dStyles->getMap()) {
                     // Only set if key doesn't already exist
                     if (targetStyles.count(kv.first) == 0) {
-                        // if kv.second is an array with "fn" as the first key, resolve it
-                        if (dStyles->isArray(kv.first)) {
-                            const auto &arr = dStyles->getArray(kv.first);
-                            if (!arr.empty() &&
-                                std::holds_alternative<std::string>(arr[0]) &&
-                                std::get<std::string>(arr[0]) == "fn") {
-                                auto result = StyleFunction::resolveStyleFn(
-                                        arr, get, variableScope);
+                        // Use StyledResolver to resolve the style value (handles functions, variables, etc.)
+                        auto resolvedValue = StyledResolver::resolveStyle(kv.second, variableScope,
+                                                                          get);
 
-                                // Skip if resolveStyleFn returns nullptr
-                                if (std::holds_alternative<std::monostate>(result)) {
-                                    return;
-                                }
-
-                                targetStyles[kv.first] = result;
-                                return;
-                            }
+                        // Skip if resolveStyle returns monostate (unresolved)
+                        if (std::holds_alternative<std::monostate>(resolvedValue)) {
+                            continue;
                         }
-                        targetStyles[kv.first] = kv.second;
+
+                        targetStyles[kv.first] = resolvedValue;
                     }
                 }
             }
@@ -204,25 +196,17 @@ namespace margelo::nitro::cssnitro {
                         for (const auto &kv: dProps->getMap()) {
                             // Only set if key doesn't already exist
                             if (targetProps.count(kv.first) == 0) {
-                                // if kv.second is an array with "fn" as the first key, resolve it
-                                if (dProps->isArray(kv.first)) {
-                                    const auto &arr = dProps->getArray(kv.first);
-                                    if (!arr.empty() &&
-                                        std::holds_alternative<std::string>(arr[0]) &&
-                                        std::get<std::string>(arr[0]) == "fn") {
-                                        auto result = StyleFunction::resolveStyleFn(
-                                                arr, get, variableScope);
+                                // Use StyledResolver to resolve the prop value (handles functions, variables, etc.)
+                                auto resolvedValue = StyledResolver::resolveStyle(kv.second,
+                                                                                  variableScope,
+                                                                                  get);
 
-                                        // Skip if resolveStyleFn returns nullptr
-                                        if (std::holds_alternative<std::monostate>(result)) {
-                                            continue;
-                                        }
-
-                                        targetProps[kv.first] = result;
-                                        continue;
-                                    }
+                                // Skip if resolveStyle returns monostate (unresolved)
+                                if (std::holds_alternative<std::monostate>(resolvedValue)) {
+                                    continue;
                                 }
-                                targetProps[kv.first] = kv.second;
+
+                                targetProps[kv.first] = resolvedValue;
                             }
                         }
                     }

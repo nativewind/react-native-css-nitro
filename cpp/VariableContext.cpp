@@ -89,37 +89,40 @@ namespace margelo::nitro::cssnitro {
                                  reactnativecss::Effect::GetProxy &get) {
         // 1. Check current key
         auto result = checkContext(key, name, get);
-        if (result.has_value()) {
+        if (result.has_value() && !std::holds_alternative<std::monostate>(result.value())) {
             return result;
         }
 
         // 2. Check "universal" context (if we're not already in it)
         if (key != "universal") {
             result = checkContext("universal", name, get);
-            if (result.has_value()) {
+            if (result.has_value() && !std::holds_alternative<std::monostate>(result.value())) {
                 return result;
             }
 
             // 3. Walk up the parent chain from the original key
-            std::string currentKey = key;
-            auto contextIt = contexts.find(currentKey);
-            if (contextIt != contexts.end()) {
-                std::string parentKey = contextIt->second.parent;
+            if (key != "root") {
+                std::string currentKey = key;
+                auto contextIt = contexts.find(currentKey);
+                if (contextIt != contexts.end()) {
+                    std::string parentKey = contextIt->second.parent;
 
-                // Walk up parent chain until we hit root (parent points to itself)
-                while (parentKey != currentKey && !parentKey.empty()) {
-                    result = checkContext(parentKey, name, get);
-                    if (result.has_value()) {
-                        return result;
-                    }
+                    // Walk up parent chain until we hit root (parent points to itself)
+                    while (parentKey != currentKey && !parentKey.empty()) {
+                        result = checkContext(parentKey, name, get);
+                        if (result.has_value() &&
+                            !std::holds_alternative<std::monostate>(result.value())) {
+                            return result;
+                        }
 
-                    // Move to next parent
-                    auto parentIt = contexts.find(parentKey);
-                    if (parentIt != contexts.end()) {
-                        currentKey = parentKey;
-                        parentKey = parentIt->second.parent;
-                    } else {
-                        break;
+                        // Move to next parent
+                        auto parentIt = contexts.find(parentKey);
+                        if (parentIt != contexts.end()) {
+                            currentKey = parentKey;
+                            parentKey = parentIt->second.parent;
+                        } else {
+                            break;
+                        }
                     }
                 }
             }

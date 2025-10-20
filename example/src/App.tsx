@@ -9,40 +9,22 @@ StyleRegistry.addStyleSheet({
       "text-red-500",
       [
         {
-          s: specificity({ className: 1, important: 1 }),
+          s: specificity({ className: 1 }),
           d: [
             {
-              color: "green",
+              color: ["fn", "var", "my-custom-color", "blue"],
             },
           ],
         },
-        {
-          s: specificity({ className: 2 }),
-          d: [
-            {
-              color: "red",
-              // transitionProperty: "color",
-              // transitionDuration: "5s",
-            },
-            {
-              selectionColor: "orange",
-            },
-          ],
-        },
-        // {
-        //   s: specificity({ className: 4 }),
-        //   d: [{ color: ["fn", "var", "my-custom-color"] }, { color: "blue" }],
-        //   aq: { a: [["true", "disabled"]] },
-        // },
       ],
     ],
   ],
 });
 
-// StyleRegistry.setRootVariables({
-//   "my-custom-color": ["fn", "var", "second-color"],
-//   "second-color": "green",
-// });
+StyleRegistry.setRootVariables({
+  "my-custom-color": [{ v: ["fn", "var", "second-color", "green"] }],
+  "second-color": [{ v: "purple" }],
+});
 
 export default function App() {
   return (
