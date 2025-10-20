@@ -25,7 +25,7 @@ StyleRegistry.addStyleSheet({
               // transitionDuration: "5s",
             },
             {
-              selectionColor: "blue",
+              selectionColor: "orange",
             },
           ],
         },
@@ -48,7 +48,7 @@ export default function App() {
   return (
     <View style={styles.container}>
       <Text className="text-red-500" style={{ fontSize: 30 }} selectable>
-        Multiply17: {multiply(3, 7)}
+        Multiply28: {multiply(3, 7)}
       </Text>
     </View>
   );

@@ -28,8 +28,13 @@ namespace margelo::nitro::cssnitro {
             const std::string &variableScope,
             const std::string &containerScope,
             const std::vector<std::string> &validAttributeQueries) {
+
+        // Capture rerender by value (copy) so it persists through fast refresh
+        // Capture shadowUpdates by pointer since it's a stable singleton
+        auto shadowUpdatesPtr = &shadowUpdates;
+
         auto computed = reactnativecss::Computed<Styled *>::create(
-                [&styleRuleMap, classNames, componentId, &rerender, &shadowUpdates, variableScope, containerScope, validAttributeQueries](
+                [&styleRuleMap, classNames, componentId, rerender, shadowUpdatesPtr, variableScope, containerScope, validAttributeQueries](
                         Styled *const &prev,
                         typename reactnativecss::Effect::GetProxy &get) {
                     Styled *next = new Styled{};
@@ -113,17 +118,26 @@ namespace margelo::nitro::cssnitro {
                                 mergedImportantProps, false);
                     }
 
+                    // Only perform these actions if this is a recompute (prev exists)
                     if (prev != nullptr) {
-                        delete prev;
-
+                        // Check if we should rerender before deleting prev
                         if (shouldRerender(*next)) {
                             (void) rerender();
                         }
 
-                        if (next->style.has_value()) {
-                            // Notify ShadowTreeUpdateManager with the resolved style
-                            shadowUpdates.addUpdates(componentId, next->style.value());
-                        }
+                        // Notify ShadowTreeUpdateManager of style changes in a batch
+                        reactnativecss::Effect::batch([&]() {
+                            if (next->style.has_value()) {
+                                shadowUpdatesPtr->addUpdates(componentId, next->style.value());
+                            }
+                            if (next->importantStyle.has_value()) {
+                                shadowUpdatesPtr->addUpdates(componentId,
+                                                             next->importantStyle.value());
+                            }
+                        });
+
+                        // Now safe to delete prev
+                        delete prev;
                     }
 
                     return next;
