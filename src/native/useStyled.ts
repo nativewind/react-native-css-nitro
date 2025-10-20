@@ -40,6 +40,8 @@ export function useStyledProps(
   // Update the variable scope after we have retrieved the declarations, so it uses its own scope
   variableScope = declarations.variableScope ?? variableScope;
 
+  console.log("useStyled", { variableScope, containerScope });
+
   const componentData = useMemo(() => {
     if (!className) {
       return {};

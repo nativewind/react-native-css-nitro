@@ -56,6 +56,4 @@ namespace margelo::nitro::cssnitro {
             const std::string &containerScope,
             const std::vector<std::string> &validAttributeQueries);
 
-    bool shouldRerender(const Styled &styled);
-
 } // namespace margelo::nitro::cssnitro

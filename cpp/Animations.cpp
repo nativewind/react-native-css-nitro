@@ -1,7 +1,7 @@
 #include "Animations.hpp"
 #include "StyleResolver.hpp"
+#include "Effect.hpp"
 #include <unordered_map>
-#include <mutex>
 
 namespace reactnativecss::animations {
 
@@ -15,28 +15,30 @@ namespace reactnativecss::animations {
     // Map to store scope-specific computeds: Map<variableScope, Map<name, Computed<AnyMap>>>
     static std::unordered_map<std::string, std::unordered_map<std::string, std::shared_ptr<reactnativecss::Computed<std::shared_ptr<AnyMap>>>>> scopedComputeds;
 
-    static std::mutex keyframesMutex;
-
     void setKeyframes(const std::string &name, const std::shared_ptr<AnyMap> &keyframes) {
-        std::lock_guard<std::mutex> lock(keyframesMutex);
+        std::shared_ptr<reactnativecss::Observable<std::shared_ptr<AnyMap>>> observable;
 
         // Find or create the observable for this keyframe name
         auto it = keyframesObservables.find(name);
 
         if (it != keyframesObservables.end()) {
-            // Update existing observable
-            it->second->set(keyframes);
+            observable = it->second;
         } else {
             // Create new observable
-            keyframesObservables[name] = reactnativecss::Observable<std::shared_ptr<AnyMap>>::create(
-                    keyframes);
+            observable = reactnativecss::Observable<std::shared_ptr<AnyMap>>::create(keyframes);
+            keyframesObservables[name] = observable;
+        }
+
+        // Batch the update to prevent cascade during fast refresh
+        if (observable) {
+            reactnativecss::Effect::batch([&]() {
+                observable->set(keyframes);
+            });
         }
     }
 
     std::shared_ptr<AnyMap> getKeyframes(const std::string &name, const std::string &variableScope,
                                          reactnativecss::Effect::GetProxy &get) {
-        std::lock_guard<std::mutex> lock(keyframesMutex);
-
         // First, ensure the Observable exists for this keyframe name
         auto obsIt = keyframesObservables.find(name);
         if (obsIt == keyframesObservables.end()) {
@@ -62,63 +64,73 @@ namespace reactnativecss::animations {
 
         if (computedIt == scopeMap.end()) {
             // Create a new Computed that gets the AnyMap from the observable and processes it
-            auto computed = reactnativecss::Computed<std::shared_ptr<AnyMap>>::create(
-                    [observable, variableScope](const std::shared_ptr<AnyMap> &prev,
-                                                reactnativecss::Effect::GetProxy &get) {
-                        // Get the raw keyframes from the observable
-                        auto rawKeyframes = get(*observable);
+            // Wrap in a batch to ensure the initial computation doesn't trigger cascades
+            std::shared_ptr<reactnativecss::Computed<std::shared_ptr<AnyMap>>> computed;
 
-                        // Create a new AnyMap to hold the resolved keyframes
-                        auto resolvedKeyframes = AnyMap::make(rawKeyframes->getMap().size());
+            reactnativecss::Effect::batch([&]() {
+                computed = reactnativecss::Computed<std::shared_ptr<AnyMap>>::create(
+                        [observable, variableScope](const std::shared_ptr<AnyMap> &prev,
+                                                    reactnativecss::Effect::GetProxy &get) {
+                            // Get the raw keyframes from the observable
+                            auto rawKeyframes = get(*observable);
 
-                        // Loop over the entries of the rawKeyframes
-                        for (const auto &entry: rawKeyframes->getMap()) {
-                            const std::string &key = entry.first;
-                            const AnyValue &value = entry.second;
-
-                            // Each value should be an AnyObject, if not skip that entry
-                            if (!std::holds_alternative<AnyObject>(value)) {
-                                continue;
+                            // If keyframes are empty, return early to avoid unnecessary processing
+                            if (rawKeyframes->getMap().empty()) {
+                                return AnyMap::make();
                             }
 
-                            const auto &frameMap = std::get<AnyObject>(value);
+                            // Create a new AnyMap to hold the resolved keyframes
+                            auto resolvedKeyframes = AnyMap::make(rawKeyframes->getMap().size());
 
-                            // Create a temporary map to hold resolved frame values
-                            std::unordered_map<std::string, AnyValue> resolvedFrameMap;
-                            resolvedFrameMap.reserve(frameMap.size());
+                            // Loop over the entries of the rawKeyframes
+                            for (const auto &entry: rawKeyframes->getMap()) {
+                                const std::string &key = entry.first;
+                                const AnyValue &value = entry.second;
 
-                            // Loop over each entry of the frame and resolve values
-                            for (const auto &frameEntry: frameMap) {
-                                const std::string &frameKey = frameEntry.first;
-                                const AnyValue &frameValue = frameEntry.second;
+                                // Each value should be an AnyObject, if not skip that entry
+                                if (!std::holds_alternative<AnyObject>(value)) {
+                                    continue;
+                                }
 
-                                // Resolve the value using StyleResolver
-                                AnyValue resolvedValue = margelo::nitro::cssnitro::StyleResolver::resolveStyle(
-                                        frameValue, variableScope, get
+                                const auto &frameMap = std::get<AnyObject>(value);
+
+                                // Create a temporary map to hold resolved frame values
+                                std::unordered_map<std::string, AnyValue> resolvedFrameMap;
+                                resolvedFrameMap.reserve(frameMap.size());
+
+                                // Loop over each entry of the frame and resolve values
+                                for (const auto &frameEntry: frameMap) {
+                                    const std::string &frameKey = frameEntry.first;
+                                    const AnyValue &frameValue = frameEntry.second;
+
+                                    // Resolve the value using StyleResolver
+                                    AnyValue resolvedValue = margelo::nitro::cssnitro::StyleResolver::resolveStyle(
+                                            frameValue, variableScope, get
+                                    );
+
+                                    resolvedFrameMap[frameKey] = resolvedValue;
+                                }
+
+                                // Apply style mapping to the resolved frame (don't process animations to avoid recursion)
+                                auto transformedFrame = margelo::nitro::cssnitro::StyleResolver::applyStyleMapping(
+                                        resolvedFrameMap, variableScope, get, false
                                 );
 
-                                resolvedFrameMap[frameKey] = resolvedValue;
+                                // Convert the transformed frame back to an AnyObject
+                                AnyObject finalFrame;
+                                for (const auto &transformedEntry: transformedFrame->getMap()) {
+                                    finalFrame[transformedEntry.first] = transformedEntry.second;
+                                }
+
+                                // Set the resolved and transformed frame in the result
+                                resolvedKeyframes->setObject(key, finalFrame);
                             }
 
-                            // Apply style mapping to the resolved frame
-                            auto transformedFrame = margelo::nitro::cssnitro::StyleResolver::applyStyleMapping(
-                                    resolvedFrameMap, variableScope, get
-                            );
-
-                            // Convert the transformed frame back to an AnyObject
-                            AnyObject finalFrame;
-                            for (const auto &transformedEntry: transformedFrame->getMap()) {
-                                finalFrame[transformedEntry.first] = transformedEntry.second;
-                            }
-
-                            // Set the resolved and transformed frame in the result
-                            resolvedKeyframes->setObject(key, finalFrame);
-                        }
-
-                        return resolvedKeyframes;
-                    },
-                    AnyMap::make()
-            );
+                            return resolvedKeyframes;
+                        },
+                        AnyMap::make()
+                );
+            });
 
             scopeMap[name] = computed;
             computedIt = scopeMap.find(name);
@@ -129,7 +141,6 @@ namespace reactnativecss::animations {
     }
 
     void deleteScope(const std::string &name) {
-        std::lock_guard<std::mutex> lock(keyframesMutex);
         scopedComputeds.erase(name);
     }
 

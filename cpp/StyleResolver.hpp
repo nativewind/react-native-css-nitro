@@ -44,12 +44,14 @@ namespace margelo::nitro::cssnitro {
          * @param inputMap The map of style properties to process
          * @param variableScope The variable scope context for resolving animations
          * @param get The Effect::GetProxy for reactive dependencies
+         * @param processAnimations Whether to process animationName properties (default true)
          * @return A new AnyMap with transform properties mapped into a transform array
          */
         static std::shared_ptr<AnyMap> applyStyleMapping(
                 const std::unordered_map<std::string, AnyValue> &inputMap,
                 const std::string &variableScope,
-                typename reactnativecss::Effect::GetProxy &get
+                typename reactnativecss::Effect::GetProxy &get,
+                bool processAnimations = true
         );
     };
 

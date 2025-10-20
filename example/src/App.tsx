@@ -11,7 +11,7 @@ StyleRegistry.addStyleSheet({
         {
           s: specificity({ className: 1 }),
           v: {
-            "my-custom-color": "red",
+            "my-custom-color": "green",
           },
           d: [
             {

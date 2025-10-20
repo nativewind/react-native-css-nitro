@@ -38,7 +38,8 @@ namespace margelo::nitro::cssnitro {
     std::shared_ptr<AnyMap> StyleResolver::applyStyleMapping(
             const std::unordered_map<std::string, AnyValue> &inputMap,
             const std::string &variableScope,
-            typename reactnativecss::Effect::GetProxy &get
+            typename reactnativecss::Effect::GetProxy &get,
+            bool processAnimations
     ) {
         static const std::unordered_set<std::string> transformProps = {
                 "translateX", "translateY", "translateZ",
@@ -51,8 +52,8 @@ namespace margelo::nitro::cssnitro {
         auto anyMap = AnyMap::make(inputMap.size());
 
         for (const auto &kv: inputMap) {
-            // Handle animationName property
-            if (kv.first == "animationName") {
+            // Handle animationName property only if processAnimations is true
+            if (processAnimations && kv.first == "animationName") {
                 // animationName can be a string or a vector of strings
                 if (std::holds_alternative<std::string>(kv.second)) {
                     // Single animation name
@@ -80,7 +81,8 @@ namespace margelo::nitro::cssnitro {
                     // Set animationName to the array of resolved keyframes
                     anyMap->setArray("animationName", keyframesArray);
                 } else {
-                    // Invalid type, don't set anything
+                    // Invalid type for animationName, just pass through as-is
+                    anyMap->setAny("animationName", kv.second);
                 }
                 continue;
             }
