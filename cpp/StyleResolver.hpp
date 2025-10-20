@@ -18,7 +18,7 @@ namespace margelo::nitro::cssnitro {
     using AnyValue = ::margelo::nitro::AnyValue;
     using AnyArray = ::margelo::nitro::AnyArray;
 
-    class StyledResolver {
+    class StyleResolver {
     public:
         /**
          * Resolve a style value, checking if it's a function that needs to be resolved.

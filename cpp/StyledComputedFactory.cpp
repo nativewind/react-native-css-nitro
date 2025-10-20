@@ -5,7 +5,7 @@
 #include "Helpers.hpp"
 #include "StyleFunction.hpp"
 #include "Specificity.hpp"
-#include "StyledResolver.hpp"
+#include "StyleResolver.hpp"
 
 #include <regex>
 #include <variant>
@@ -169,9 +169,9 @@ namespace margelo::nitro::cssnitro {
                 for (const auto &kv: dStyles->getMap()) {
                     // Only set if key doesn't already exist
                     if (targetStyles.count(kv.first) == 0) {
-                        // Use StyledResolver to resolve the style value (handles functions, variables, etc.)
-                        auto resolvedValue = StyledResolver::resolveStyle(kv.second, variableScope,
-                                                                          get);
+                        // Use StyleResolver to resolve the style value (handles functions, variables, etc.)
+                        auto resolvedValue = StyleResolver::resolveStyle(kv.second, variableScope,
+                                                                         get);
 
                         // Skip if resolveStyle returns monostate (unresolved)
                         if (std::holds_alternative<std::monostate>(resolvedValue)) {
@@ -196,10 +196,10 @@ namespace margelo::nitro::cssnitro {
                         for (const auto &kv: dProps->getMap()) {
                             // Only set if key doesn't already exist
                             if (targetProps.count(kv.first) == 0) {
-                                // Use StyledResolver to resolve the prop value (handles functions, variables, etc.)
-                                auto resolvedValue = StyledResolver::resolveStyle(kv.second,
-                                                                                  variableScope,
-                                                                                  get);
+                                // Use StyleResolver to resolve the prop value (handles functions, variables, etc.)
+                                auto resolvedValue = StyleResolver::resolveStyle(kv.second,
+                                                                                 variableScope,
+                                                                                 get);
 
                                 // Skip if resolveStyle returns monostate (unresolved)
                                 if (std::holds_alternative<std::monostate>(resolvedValue)) {

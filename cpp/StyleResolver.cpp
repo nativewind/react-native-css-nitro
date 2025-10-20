@@ -2,13 +2,13 @@
 // Created on October 19, 2025.
 //
 
-#include "StyledResolver.hpp"
+#include "StyleResolver.hpp"
 #include "StyleFunction.hpp"
 #include <variant>
 
 namespace margelo::nitro::cssnitro {
 
-    AnyValue StyledResolver::resolveStyle(
+    AnyValue StyleResolver::resolveStyle(
             const AnyValue &value,
             const std::string &variableScope,
             typename reactnativecss::Effect::GetProxy &get

@@ -1,6 +1,6 @@
 #include "VariableContext.hpp"
 #include "Rules.hpp"
-#include "StyledResolver.hpp"
+#include "StyleResolver.hpp"
 
 namespace margelo::nitro::cssnitro {
 
@@ -58,7 +58,7 @@ namespace margelo::nitro::cssnitro {
             auto varIt = valueMap.find(name);
             if (varIt != valueMap.end()) {
                 AnyValue value = getValue(varIt->second, get);
-                return StyledResolver::resolveStyle(value, contextKey, get);
+                return StyleResolver::resolveStyle(value, contextKey, get);
             } else {
                 // Variable doesn't exist in this context
                 // Check if this is a root or universal context
@@ -70,7 +70,7 @@ namespace margelo::nitro::cssnitro {
 
                     // Get the initial value from the computed
                     AnyValue value = getValue(computed, get);
-                    return StyledResolver::resolveStyle(value, contextKey, get);
+                    return StyleResolver::resolveStyle(value, contextKey, get);
                 } else {
                     // For other contexts, create a new Observable with nullptr
                     auto observable = reactnativecss::Observable<AnyValue>::create(AnyValue());
