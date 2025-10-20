@@ -7,6 +7,7 @@
 #include "Environment.hpp"
 #include "VariableContext.hpp"
 #include "PseudoClasses.hpp"
+#include "JSLogger.hpp"
 
 #include <regex>
 #include <string>
@@ -278,6 +279,7 @@ namespace margelo::nitro::cssnitro {
     HybridStyleRegistry::linkComponent(jsi::Runtime &runtime, const jsi::Value &thisValue,
                                        const jsi::Value *args, size_t count) {
         (void) thisValue;
+
         if (count < 2) {
             return jsi::Value::undefined();
         }
@@ -298,6 +300,14 @@ namespace margelo::nitro::cssnitro {
                                                  const jsi::Value *args, size_t count) {
         (void) thisValue;
 
+        // Initialize JSLogger on first call with runtime access
+        static bool jsLoggerInitialized = false;
+        if (!jsLoggerInitialized) {
+            JSLogger::initialize(runtime);
+            jsLoggerInitialized = true;
+
+        }
+
         if (!args[0].isObject()) {
             return jsi::Value::undefined();
         }
@@ -307,6 +317,7 @@ namespace margelo::nitro::cssnitro {
         jsi::Function processColorFn = maybeProcessColorFn.asObject(runtime).asFunction(runtime);
 
         shadowUpdates_->registerProcessColorFunction(std::move(processColorFn));
+        JSLOGD("processColor was registered in HybridStyleRegistry");
 
         return jsi::Value::undefined();
     }
