@@ -1,4 +1,3 @@
-// filepath: /Users/mark/Developer/react-native-css-nitro/cpp/Environment.cpp
 #include "Environment.hpp"
 
 namespace reactnativecss {

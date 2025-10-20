@@ -17,12 +17,16 @@ namespace margelo::nitro::cssnitro {
         /**
          * Convert an unordered_map to AnyMap with optional transform property handling.
          * @param mergedMap The source map to convert
-         * @param applyTransformMapping If true, applies special handling for transform properties
+         * @param applyTransformMapping If true, applies special handling for transform properties and animations
+         * @param variableScope The scope for variable resolution and animation keyframes
+         * @param get The Effect GetProxy for reactive dependencies
          * @return The converted AnyMap
          */
         static std::shared_ptr<margelo::nitro::AnyMap> convertToAnyMap(
                 const std::unordered_map<std::string, margelo::nitro::AnyValue> &mergedMap,
-                bool applyTransformMapping);
+                bool applyTransformMapping,
+                const std::string &variableScope,
+                reactnativecss::Effect::GetProxy &get);
 
         /**
          * Process declarations from a style rule and merge them into target maps.

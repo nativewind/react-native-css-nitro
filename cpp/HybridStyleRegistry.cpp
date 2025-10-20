@@ -8,6 +8,7 @@
 #include "VariableContext.hpp"
 #include "PseudoClasses.hpp"
 #include "JSLogger.hpp"
+#include "Animations.hpp"
 
 #include <regex>
 #include <string>
@@ -16,12 +17,8 @@
 #include <optional>
 #include <unordered_map>
 #include <mutex>
-
-// New: dynamic payloads (now handled by ShadowTreeUpdateManager)
 #include <folly/dynamic.h>
-
-// React Tag
-#include <react/renderer/core/ReactPrimitives.h> // facebook::react::Tag
+#include <react/renderer/core/ReactPrimitives.h>
 
 
 namespace margelo::nitro::cssnitro {
@@ -343,6 +340,11 @@ namespace margelo::nitro::cssnitro {
         (void) componentId;
         (void) inlineStyleKeys;
         // TODO: Integrate with style computation/ShadowTreeUpdateManager if needed.
+    }
+
+    void HybridStyleRegistry::setKeyframes(const std::string &name,
+                                           const std::shared_ptr<AnyMap> &keyframes) {
+        reactnativecss::animations::setKeyframes(name, keyframes);
     }
 
 } // namespace margelo::nitro::cssnitro

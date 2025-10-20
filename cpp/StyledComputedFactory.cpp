@@ -112,21 +112,23 @@ namespace margelo::nitro::cssnitro {
 
                     // Convert and assign all maps using the helper function
                     if (!mergedStyles.empty()) {
-                        next->style = StyledComputedFactory::convertToAnyMap(mergedStyles, true);
+                        next->style = StyledComputedFactory::convertToAnyMap(mergedStyles, true,
+                                                                             variableScope, get);
                     }
 
                     if (!mergedProps.empty()) {
-                        next->props = StyledComputedFactory::convertToAnyMap(mergedProps, false);
+                        next->props = StyledComputedFactory::convertToAnyMap(mergedProps, false,
+                                                                             variableScope, get);
                     }
 
                     if (!mergedImportantStyles.empty()) {
                         next->importantStyle = StyledComputedFactory::convertToAnyMap(
-                                mergedImportantStyles, true);
+                                mergedImportantStyles, true, variableScope, get);
                     }
 
                     if (!mergedImportantProps.empty()) {
                         next->importantProps = StyledComputedFactory::convertToAnyMap(
-                                mergedImportantProps, false);
+                                mergedImportantProps, false, variableScope, get);
                     }
 
                     // Only perform these actions if this is a recompute (prev exists)
@@ -228,61 +230,20 @@ namespace margelo::nitro::cssnitro {
 
     std::shared_ptr<AnyMap> StyledComputedFactory::convertToAnyMap(
             const std::unordered_map<std::string, AnyValue> &mergedMap,
-            bool applyTransformMapping) {
-        auto anyMap = AnyMap::make(mergedMap.size());
-
-        if (applyTransformMapping) {
-            static const std::unordered_set<std::string> transformProps = {
-                    "translateX", "translateY", "translateZ",
-                    "rotate", "rotateX", "rotateY", "rotateZ",
-                    "scaleX", "scaleY", "scaleZ",
-                    "skewX", "skewY",
-                    "perspective"
-            };
-
-            for (const auto &kv: mergedMap) {
-                if (transformProps.count(kv.first) > 0) {
-                    AnyArray transformArray;
-
-                    // Get existing transform array if it exists
-                    if (anyMap->contains("transform")) {
-                        transformArray = anyMap->getArray("transform");
-                    }
-
-                    // find the value in the array with the key matching kv.first and set it to kv.second
-                    bool foundTransform = false;
-                    for (size_t i = 0; i < transformArray.size(); i++) {
-                        if (std::holds_alternative<AnyObject>(transformArray[i])) {
-                            auto obj = std::get<AnyObject>(transformArray[i]);
-                            if (obj.count(kv.first) > 0) {
-                                obj[kv.first] = kv.second;
-                                transformArray[i] = obj;
-                                foundTransform = true;
-                                break;
-                            }
-                        }
-                    }
-
-                    // If transform property not found in array, add a new transform object
-                    if (!foundTransform) {
-                        AnyObject transformObj;
-                        transformObj[kv.first] = kv.second;
-                        transformArray.emplace_back(transformObj);
-                    }
-
-                    anyMap->setArray("transform", transformArray);
-                    continue;
-                }
-
-                anyMap->setAny(kv.first, kv.second);
-            }
+            bool applyStyleMapping,
+            const std::string &variableScope,
+            reactnativecss::Effect::GetProxy &get) {
+        if (applyStyleMapping) {
+            // Use StyleResolver's helper function to apply style mapping
+            return StyleResolver::applyStyleMapping(mergedMap, variableScope, get);
         } else {
+            // For props, just copy all values directly without transform mapping
+            auto anyMap = AnyMap::make(mergedMap.size());
             for (const auto &kv: mergedMap) {
                 anyMap->setAny(kv.first, kv.second);
             }
+            return anyMap;
         }
-
-        return anyMap;
     }
 
 

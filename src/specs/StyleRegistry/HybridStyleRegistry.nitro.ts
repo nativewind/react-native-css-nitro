@@ -12,6 +12,7 @@ export interface StyleRegistry
   setRootVariables(variables: AnyMap): void;
   setUniversalVariables(variables: AnyMap): void;
   addStyleSheet(stylesheet: HybridStyleSheet): void;
+  setKeyframes(name: string, keyframes: AnyMap): void;
   getDeclarations(
     componentId: string,
     classNames: string,
@@ -75,13 +76,6 @@ export interface Styled {
 
 export type PseudoClassType = "active" | "hover" | "focus";
 
-export type StyleConfig = [
-  source: string,
-  target: string[],
-  StyleConfigNativeStyleToProp[],
-];
-export type StyleConfigNativeStyleToProp = [string, string[]];
-
 /******************************    StyleSheet   *******************************/
 
 export interface HybridStyleSheet {
@@ -90,12 +84,14 @@ export interface HybridStyleSheet {
   /** StyleRuleSets */
   s?: (readonly [string, HybridStyleRule[]])[];
   // /** KeyFrames */
-  // k?: Animation[];
+  k?: Animation[];
   // /** Root Variables */
   vr?: AnyMap;
   // /** Universal Variables */
   // vu?: RootVariables;
 }
+
+type Animation = [string, AnyMap];
 
 /******************************    StyleRule    *******************************/
 

@@ -7,6 +7,7 @@
 #include <string>
 #include "Effect.hpp"
 #include <NitroModules/AnyMap.hpp>
+#include <unordered_map>
 
 namespace margelo::nitro {
     struct AnyValue;
@@ -17,6 +18,7 @@ namespace margelo::nitro::cssnitro {
 
     using AnyValue = ::margelo::nitro::AnyValue;
     using AnyArray = ::margelo::nitro::AnyArray;
+    using AnyMap = ::margelo::nitro::AnyMap;
 
     class StyleResolver {
     public:
@@ -33,7 +35,22 @@ namespace margelo::nitro::cssnitro {
                 const std::string &variableScope,
                 typename reactnativecss::Effect::GetProxy &get
         );
+
+        /**
+         * Apply style mapping to a map of styles, converting individual transform
+         * properties (like scaleX, rotateZ, translateY) into a transform array.
+         * Also handles animationName by fetching keyframes.
+         *
+         * @param inputMap The map of style properties to process
+         * @param variableScope The variable scope context for resolving animations
+         * @param get The Effect::GetProxy for reactive dependencies
+         * @return A new AnyMap with transform properties mapped into a transform array
+         */
+        static std::shared_ptr<AnyMap> applyStyleMapping(
+                const std::unordered_map<std::string, AnyValue> &inputMap,
+                const std::string &variableScope,
+                typename reactnativecss::Effect::GetProxy &get
+        );
     };
 
 } // namespace margelo::nitro::cssnitro
-

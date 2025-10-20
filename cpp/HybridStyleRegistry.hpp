@@ -32,12 +32,10 @@ namespace margelo::nitro::cssnitro {
 
         ~HybridStyleRegistry() override;
 
-        // Shorthand aliases
         using PropValue = std::variant<std::string, double, bool>;
         using PropPath = std::vector<std::string>;
         using SelectorAndArgs = std::tuple<std::string, std::vector<std::string>>;
 
-        // ----- public API forwarded to Impl -----
         void setClassname(const std::string &className,
                           const std::vector<HybridStyleRule> &styleRule) override;
 
@@ -72,6 +70,9 @@ namespace margelo::nitro::cssnitro {
 
         void
         setWindowDimensions(double width, double height, double scale, double fontScale) override;
+
+        void
+        setKeyframes(const std::string &name, const std::shared_ptr<AnyMap> &keyframes) override;
 
     protected:
         void loadHybridMethods() override;

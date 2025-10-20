@@ -11,17 +11,29 @@ StyleRegistry.addStyleSheet({
         {
           s: specificity({ className: 1 }),
           v: {
-            "my-custom-color": "yellow",
+            "my-custom-color": "red",
           },
           d: [
             {
               color: ["fn", "var", "my-custom-color", "blue"],
+              animationName: "spin",
+              animationDuration: "1s",
+              animationIterationCount: "infinite",
             },
           ],
         },
       ],
     ],
   ],
+});
+
+StyleRegistry.setKeyframes("spin", {
+  "0%": {
+    rotate: "0deg",
+  },
+  "100%": {
+    rotate: "360deg",
+  },
 });
 
 StyleRegistry.setRootVariables({
