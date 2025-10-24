@@ -3,6 +3,8 @@ import { StyleSheet, View } from "react-native";
 import { multiply, specificity, StyleRegistry } from "react-native-css-nitro";
 import { Text } from "react-native-css-nitro/components/Text";
 
+import "../global.css";
+
 StyleRegistry.addStyleSheet({
   s: {
     "text-red-500": [
@@ -19,7 +21,7 @@ StyleRegistry.addStyleSheet({
 export default function App() {
   return (
     <View style={styles.container}>
-      <Text className="text-red-500" style={{ fontSize: 30 }}>
+      <Text className="test" style={{ fontSize: 30 }}>
         Multiply28: {multiply(3, 7)}
       </Text>
     </View>
