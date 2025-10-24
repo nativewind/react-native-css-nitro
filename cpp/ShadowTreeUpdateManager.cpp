@@ -190,7 +190,9 @@ namespace margelo::nitro::cssnitro {
         auto binding = facebook::react::UIManagerBinding::getBinding(runtime);
         if (!binding) return;
         auto &uiManager = binding->getUIManager();
-        uiManager.updateShadowTree(updates);
+        // Make a copy since updateShadowTree takes an rvalue reference
+        UpdatesMap updatesCopy = updates;
+        uiManager.updateShadowTree(std::move(updatesCopy));
     }
 
 } // namespace margelo::nitro::cssnitro
