@@ -100,7 +100,7 @@ export class CompilerStyleSheet {
   }
 
   addDeclarations(declarations?: Declaration[]) {
-    if (!declarations) {
+    if (!declarations || declarations.length === 0) {
       return;
     }
 
@@ -178,7 +178,7 @@ export class CompilerStyleSheet {
 
     for (const selector of selectors) {
       for (const partialRule of rules.getAllRules()) {
-        const rule = this.createRule(partialRule, options);
+        const rule = this.createRule(partialRule, selector, options);
         this.appendRule(selector, rule);
       }
     }
@@ -207,6 +207,7 @@ export class CompilerStyleSheet {
 
   private createRule(
     partialRule: Partial<HybridStyleRule>,
+    selector: NormalizedSelector,
     options?: { important?: boolean },
   ): HybridStyleRule {
     const rule: HybridStyleRule = {
@@ -223,6 +224,13 @@ export class CompilerStyleSheet {
           // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
           delete rule.d[oldKey];
         }
+      }
+    }
+
+    if (selector.type === "className") {
+      if (selector.containerQuery) {
+        rule.cq = [...(rule.cq ?? [])];
+        rule.cq.push(...selector.containerQuery);
       }
     }
 
