@@ -45,11 +45,11 @@ namespace margelo::nitro::cssnitro {
         testMediaQuery(const std::string &key, const std::string &op, const AnyValue &value,
                        reactnativecss::Effect::GetProxy &get);
 
-        static bool testContainerQueries(const std::vector<ContainerQuery> &containerQueries,
+        static bool testContainerQueries(const std::vector<HybridContainerQuery> &containerQueries,
                                          reactnativecss::Effect::GetProxy &get,
                                          const std::string &containerScope);
 
-        static bool testContainerQuery(const ContainerQuery &containerQuery,
+        static bool testContainerQuery(const HybridContainerQuery &containerQuery,
                                        reactnativecss::Effect::GetProxy &get,
                                        const std::string &containerScope);
 

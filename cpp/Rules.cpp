@@ -31,16 +31,16 @@ namespace margelo::nitro::cssnitro {
             }
         }
 
-        // Check pseudo-classes (rule.p)
-        if (rule.p.has_value()) {
-            if (!testPseudoClasses(rule.p.value(), componentId, get)) {
+        // Check pseudo-classes (rule.pq)
+        if (rule.pq.has_value()) {
+            if (!testPseudoClasses(rule.pq.value(), componentId, get)) {
                 return false;
             }
         }
 
-        // Check media queries (rule.m)
-        if (rule.m.has_value() && rule.m.value()) {
-            auto &mediaMap = *rule.m.value();
+        // Check media queries (rule.mq)
+        if (rule.mq.has_value() && rule.mq.value()) {
+            auto &mediaMap = *rule.mq.value();
             if (!testMediaMap(mediaMap, get)) {
                 return false;
             }
@@ -265,7 +265,7 @@ namespace margelo::nitro::cssnitro {
         return false;
     }
 
-    bool Rules::testContainerQueries(const std::vector<ContainerQuery> &containerQueries,
+    bool Rules::testContainerQueries(const std::vector<HybridContainerQuery> &containerQueries,
                                      reactnativecss::Effect::GetProxy &get,
                                      const std::string &containerScope) {
         // Loop over all container queries and return false if any fail
@@ -277,7 +277,7 @@ namespace margelo::nitro::cssnitro {
         return true;
     }
 
-    bool Rules::testContainerQuery(const ContainerQuery &containerQuery,
+    bool Rules::testContainerQuery(const HybridContainerQuery &containerQuery,
                                    reactnativecss::Effect::GetProxy &get,
                                    const std::string &containerScope) {
         std::optional<std::string> containerName = std::nullopt;

@@ -92,21 +92,27 @@ namespace margelo::nitro::cssnitro {
 
                     }
 
-                    // Process the declarations
+                    // Process the declarations and props
                     for (const HybridStyleRule &styleRule: allStyleRules) {
+                        // Check if this is an important rule (s[0] > 0)
+                        const bool isImportant = std::get<0>(styleRule.s) > 0;
+
+                        // Process declarations (styles) from the "d" key
                         if (styleRule.d.has_value()) {
                             const auto &declarations = styleRule.d.value();
-
-                            // Check if this is an important rule (s[0] > 0)
-                            const bool isImportant = std::get<0>(styleRule.s) > 0;
-
-                            // Determine which maps to use based on importance
                             auto &targetStyles = isImportant ? mergedImportantStyles : mergedStyles;
+
+                            StyledComputedFactory::processDeclarations(
+                                    declarations, targetStyles, get, variableScope);
+                        }
+
+                        // Process props from the "p" key
+                        if (styleRule.p.has_value()) {
+                            const auto &props = styleRule.p.value();
                             auto &targetProps = isImportant ? mergedImportantProps : mergedProps;
 
-                            // Process declarations using the helper function
                             StyledComputedFactory::processDeclarations(
-                                    declarations, targetStyles, targetProps, get, variableScope);
+                                    props, targetProps, get, variableScope);
                         }
                     }
 
@@ -174,65 +180,33 @@ namespace margelo::nitro::cssnitro {
     }
 
     void StyledComputedFactory::processDeclarations(
-            const auto &declarations,
-            std::unordered_map<std::string, AnyValue> &targetStyles,
-            std::unordered_map<std::string, AnyValue> &targetProps,
+            const std::shared_ptr<AnyMap> &declarations,
+            std::unordered_map<std::string, AnyValue> &targetMap,
             reactnativecss::Effect::GetProxy &get,
             const std::string &variableScope) {
 
-        std::visit([&targetStyles, &targetProps, &get, &variableScope](const auto &decl) {
-            // decl is a tuple, get the first element (the styles)
-            const auto &dStyles = std::get<0>(decl);
+        // declarations is a shared_ptr<AnyMap> containing the style or prop values
+        if (!declarations) {
+            return;
+        }
 
-            // Check if dStyles is valid before accessing
-            if (dStyles) {
-                for (const auto &kv: dStyles->getMap()) {
-                    // Only set if key doesn't already exist
-                    if (targetStyles.count(kv.first) == 0) {
-                        // Use StyleResolver to resolve the style value (handles functions, variables, etc.)
-                        auto resolvedValue = StyleResolver::resolveStyle(kv.second, variableScope,
-                                                                         get);
+        // Get the map of all key-value pairs from the AnyMap
+        const auto &map = declarations->getMap();
 
-                        // Skip if resolveStyle returns monostate (unresolved)
-                        if (std::holds_alternative<std::monostate>(resolvedValue)) {
-                            continue;
-                        }
+        for (const auto &kv: map) {
+            // Only set if key doesn't already exist
+            if (targetMap.count(kv.first) == 0) {
+                // Use StyleResolver to resolve the value (handles functions, variables, etc.)
+                auto resolvedValue = StyleResolver::resolveStyle(kv.second, variableScope, get);
 
-                        targetStyles[kv.first] = resolvedValue;
-                    }
+                // Skip if resolveStyle returns monostate (unresolved)
+                if (std::holds_alternative<std::monostate>(resolvedValue)) {
+                    continue;
                 }
+
+                targetMap[kv.first] = resolvedValue;
             }
-
-            // Check if there's a second element in the tuple (props)
-            if constexpr (std::tuple_size<std::decay_t<decltype(decl)>>::value > 1) {
-                const auto &dPropsOpt = std::get<1>(decl);
-
-                // dPropsOpt is optional, check if it has a value
-                if (dPropsOpt.has_value()) {
-                    const auto &dProps = dPropsOpt.value();
-
-                    // Check if dProps is valid before accessing
-                    if (dProps) {
-                        for (const auto &kv: dProps->getMap()) {
-                            // Only set if key doesn't already exist
-                            if (targetProps.count(kv.first) == 0) {
-                                // Use StyleResolver to resolve the prop value (handles functions, variables, etc.)
-                                auto resolvedValue = StyleResolver::resolveStyle(kv.second,
-                                                                                 variableScope,
-                                                                                 get);
-
-                                // Skip if resolveStyle returns monostate (unresolved)
-                                if (std::holds_alternative<std::monostate>(resolvedValue)) {
-                                    continue;
-                                }
-
-                                targetProps[kv.first] = resolvedValue;
-                            }
-                        }
-                    }
-                }
-            }
-        }, declarations);
+        }
     }
 
 

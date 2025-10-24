@@ -1,4 +1,7 @@
-import type { AttributeQuery, AttributeQueryRule } from "../compiler/types";
+import type {
+  AttributeQuery,
+  AttributeQueryRule,
+} from "../specs/StyleRegistry";
 
 export function testAttributeQuery(
   props: Record<string, any>,

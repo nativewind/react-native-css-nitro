@@ -29,17 +29,15 @@ namespace margelo::nitro::cssnitro {
                 reactnativecss::Effect::GetProxy &get);
 
         /**
-         * Process declarations from a style rule and merge them into target maps.
-         * @param declarations The variant containing style/prop declarations
-         * @param targetStyles The map to store style declarations
-         * @param targetProps The map to store prop declarations
+         * Process declarations from a style rule and merge them into a target map.
+         * @param declarations The AnyMap containing style or prop declarations
+         * @param targetMap The map to store the processed declarations
          * @param get The Effect GetProxy for resolving reactive values
          * @param variableScope The scope for variable resolution
          */
         static void processDeclarations(
-                const auto &declarations,
-                std::unordered_map<std::string, margelo::nitro::AnyValue> &targetStyles,
-                std::unordered_map<std::string, margelo::nitro::AnyValue> &targetProps,
+                const std::shared_ptr<margelo::nitro::AnyMap> &declarations,
+                std::unordered_map<std::string, margelo::nitro::AnyValue> &targetMap,
                 reactnativecss::Effect::GetProxy &get,
                 const std::string &variableScope);
     };

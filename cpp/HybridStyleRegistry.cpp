@@ -68,15 +68,11 @@ namespace margelo::nitro::cssnitro {
         reactnativecss::Effect::batch([this, &stylesheet]() {
             // If the key "s" exists, loop over every entry
             if (stylesheet.s.has_value()) {
-                const auto &styles = stylesheet.s.value();
-                for (const auto &entry: styles) {
-                    // entry is a tuple<string, HybridStyleRule>
-                    // entry[0] is the className, entry[1] is the styleRule
-                    const std::string &className = std::get<0>(entry);
-                    const std::vector<HybridStyleRule> &styleRule = std::get<1>(entry);
-
-                    // Call setClassname with a vector containing the single styleRule
-                    setClassname(className, styleRule);
+                const auto &stylesMap = stylesheet.s.value();
+                // stylesMap is std::unordered_map<string, vector<HybridStyleRule>>
+                for (const auto &[className, styleRules]: stylesMap) {
+                    // className is string, styleRules is vector<HybridStyleRule>
+                    setClassname(className, styleRules);
                 }
             }
         });
@@ -145,8 +141,8 @@ namespace margelo::nitro::cssnitro {
                 }
 
                 // Check for pseudo-classes
-                if (sr.p.has_value()) {
-                    const auto &pseudoClass = sr.p.value();
+                if (sr.pq.has_value()) {
+                    const auto &pseudoClass = sr.pq.value();
 
                     // Check if active pseudo-class is set
                     if (pseudoClass.a.has_value()) {

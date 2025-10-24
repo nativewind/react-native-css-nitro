@@ -1,6 +1,6 @@
 import type { SpecificityArray } from "../specs/StyleRegistry/HybridStyleRegistry.nitro";
 
-const Specificity = {
+export const Specificity = {
   important: 0,
   inline: 1,
   pseudoElements: 2,
