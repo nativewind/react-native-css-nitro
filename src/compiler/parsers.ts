@@ -1,6 +1,24 @@
 import { type BoxShadowValue } from "react-native";
 
-import Color from "colorjs.io";
+import {
+  A98RGB,
+  ColorSpace,
+  HSL,
+  HWB,
+  Lab,
+  LCH,
+  OKLab,
+  OKLCH,
+  P3,
+  ProPhoto,
+  REC_2020,
+  serialize,
+  sRGB,
+  sRGB_Linear,
+  XYZ_D50,
+  XYZ_D65,
+  type PlainColorObject,
+} from "colorjs.io/fn";
 import type {
   Angle,
   AnimationDirection,
@@ -46,6 +64,20 @@ import type { ValueType } from "react-native-nitro-modules";
 
 import type { DeclarationBuilder } from "./declarations";
 import { toRNProperty } from "./selectors-new";
+
+ColorSpace.register(sRGB);
+ColorSpace.register(P3);
+ColorSpace.register(OKLab);
+ColorSpace.register(OKLCH);
+ColorSpace.register(Lab);
+ColorSpace.register(LCH);
+ColorSpace.register(HSL);
+ColorSpace.register(HWB);
+ColorSpace.register(A98RGB);
+ColorSpace.register(ProPhoto);
+ColorSpace.register(REC_2020);
+ColorSpace.register(XYZ_D50);
+ColorSpace.register(XYZ_D65);
 
 export type Parser<
   T extends Declaration["property"] = Declaration["property"],
@@ -1249,7 +1281,7 @@ function color(
     return;
   }
 
-  let color: Color | undefined;
+  let color: PlainColorObject | undefined;
 
   const { hexColors = true, colorPrecision } = b.getOptions();
 
@@ -1271,120 +1303,124 @@ function color(
       return;
     }
     case "rgb": {
-      color = new Color({
-        space: "sRGB",
+      color = {
+        space: sRGB,
         coords: [cssColor.r / 255, cssColor.g / 255, cssColor.b / 255],
         alpha: cssColor.alpha,
-      });
+      };
       break;
     }
     case "hsl":
-      color = new Color({
-        space: cssColor.type,
+      color = {
+        space: HSL,
         coords: [cssColor.h, cssColor.s, cssColor.l],
         alpha: cssColor.alpha,
-      });
+      };
       break;
     case "hwb":
-      color = new Color({
-        space: cssColor.type,
+      color = {
+        space: HWB,
         coords: [cssColor.h, cssColor.w, cssColor.b],
         alpha: cssColor.alpha,
-      });
+      };
       break;
     case "lab":
-      color = new Color({
-        space: cssColor.type,
+      color = {
+        space: Lab,
         coords: [cssColor.l, cssColor.a, cssColor.b],
         alpha: cssColor.alpha,
-      });
+      };
       break;
     case "lch":
-      color = new Color({
-        space: cssColor.type,
+      color = {
+        space: LCH,
         coords: [cssColor.l, cssColor.c, cssColor.h],
         alpha: cssColor.alpha,
-      });
+      };
       break;
     case "oklab":
-      color = new Color({
-        space: cssColor.type,
+      color = {
+        space: OKLab,
         coords: [cssColor.l, cssColor.a, cssColor.b],
         alpha: cssColor.alpha,
-      });
+      };
       break;
     case "oklch":
-      color = new Color({
-        space: cssColor.type,
+      color = {
+        space: OKLCH,
         coords: [cssColor.l, cssColor.c, cssColor.h],
         alpha: cssColor.alpha,
-      });
+      };
       break;
     case "srgb":
-      color = new Color({
-        space: cssColor.type,
+      color = {
+        space: sRGB,
         coords: [cssColor.r, cssColor.g, cssColor.b],
         alpha: cssColor.alpha,
-      });
+      };
       break;
     case "srgb-linear":
-      color = new Color({
-        space: cssColor.type,
+      color = {
+        space: sRGB_Linear,
         coords: [cssColor.r, cssColor.g, cssColor.b],
         alpha: cssColor.alpha,
-      });
+      };
       break;
     case "display-p3":
-      color = new Color({
-        space: "p3",
+      color = {
+        space: P3,
         coords: [cssColor.r, cssColor.g, cssColor.b],
         alpha: cssColor.alpha,
-      });
+      };
       break;
     case "a98-rgb":
-      color = new Color({
-        space: "a98rgb",
+      color = {
+        space: A98RGB,
         coords: [cssColor.r, cssColor.g, cssColor.b],
         alpha: cssColor.alpha,
-      });
+      };
       break;
     case "prophoto-rgb":
-      color = new Color({
-        space: "prophoto",
+      color = {
+        space: ProPhoto,
         coords: [cssColor.r, cssColor.g, cssColor.b],
         alpha: cssColor.alpha,
-      });
+      };
       break;
     case "rec2020":
-      color = new Color({
-        space: cssColor.type,
+      color = {
+        space: REC_2020,
         coords: [cssColor.r, cssColor.g, cssColor.b],
         alpha: cssColor.alpha,
-      });
+      };
       break;
     case "xyz-d50":
-      color = new Color({
-        space: cssColor.type,
+      color = {
+        space: XYZ_D50,
         coords: [cssColor.x, cssColor.y, cssColor.z],
         alpha: cssColor.alpha,
-      });
+      };
       break;
     case "xyz-d65":
-      color = new Color({
-        space: cssColor.type,
+      color = {
+        space: XYZ_D65,
         coords: [cssColor.x, cssColor.y, cssColor.z],
         alpha: cssColor.alpha,
-      });
+      };
       break;
     default: {
       cssColor satisfies never;
     }
   }
 
+  if (!color) {
+    return;
+  }
+
   if (!hexColors || colorPrecision) {
-    return color?.toString({ precision: colorPrecision ?? 3 });
+    return serialize(color, { precision: colorPrecision ?? 3 });
   } else {
-    return color?.toString({ format: "hex" });
+    return serialize(serialize(color, { format: "srgb" }), { format: "hex" });
   }
 }
 

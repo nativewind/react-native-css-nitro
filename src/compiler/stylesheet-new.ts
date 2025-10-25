@@ -113,7 +113,7 @@ export class CompilerStyleSheet {
   }
 
   addImportantDeclarations(declarations?: Declaration[]) {
-    if (!declarations) {
+    if (!declarations || declarations.length === 0) {
       return;
     }
     const rule = new DeclarationBuilder(this.options, this.currentMapping);
@@ -171,9 +171,7 @@ export class CompilerStyleSheet {
 
     const selectors = this.selectorStack.at(0);
     if (!selectors?.length) {
-      throw new Error(
-        "Cannot add declaration without an active selector context",
-      );
+      return;
     }
 
     for (const selector of selectors) {
