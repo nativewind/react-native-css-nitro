@@ -3,9 +3,9 @@ import { Text as RNText } from "react-native";
 
 import { createAnimatedComponent } from "react-native-reanimated";
 
-import { useElement } from "../../native/useElement";
-import { useDualRefs } from "../../native/useRef";
-import { useStyledProps } from "../../native/useStyled";
+import { useElement } from "../../native-cpp/useElement";
+import { useDualRefs } from "../../native-cpp/useRef";
+import { useStyledProps } from "../../native-cpp/useStyled";
 import { StyleRegistry } from "../../specs/StyleRegistry";
 import { copyComponentProperties, getDeepKeys } from "../../utils";
 

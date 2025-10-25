@@ -6,7 +6,7 @@ import type {
   SelectorList,
 } from "lightningcss";
 
-import { Specificity } from "../native/specificity";
+import { Specificity } from "../native-cpp/specificity";
 import type {
   HybridAnimation,
   HybridContainerQuery,

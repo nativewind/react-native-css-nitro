@@ -1,7 +1,7 @@
 import type { Selector, SelectorComponent, SelectorList } from "lightningcss";
 import type { AnyMap } from "react-native-nitro-modules";
 
-import { Specificity } from "../native/specificity";
+import { Specificity } from "../native-cpp/specificity";
 import type {
   AttributeQueryRule,
   AttrSelectorOperator,
