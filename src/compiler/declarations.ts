@@ -4,7 +4,7 @@ import type { ValueType } from "react-native-nitro-modules";
 import type { HybridStyleRule } from "../specs/StyleRegistry";
 import type { CompilerOptions } from "./compiler.types";
 import { customDeclaration, parsers, unparsed, type Parser } from "./parsers";
-import { toRNProperty } from "./selectors-new";
+import { toRNProperty } from "./selectors";
 
 export class DeclarationBuilder {
   private declaration: Partial<HybridStyleRule> = {};

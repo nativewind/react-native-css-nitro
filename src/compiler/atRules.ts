@@ -6,8 +6,7 @@ import type {
 } from "lightningcss";
 
 import type { StyleRuleMapping } from "./compiler.types";
-import { toRNProperty } from "./selectors-new";
-import { splitByDelimiter } from "./split-by-delimiter";
+import { toRNProperty } from "./selectors";
 
 export interface PropAtRule {
   type: "unknown";
@@ -144,4 +143,24 @@ function nativeMappingAtRuleBlock(
   mapping[toRNProperty(fromToken.value.value)] = value;
 
   return mapping;
+}
+
+export function splitByDelimiter<T>(
+  arr: T[],
+  callback: (item: T) => boolean,
+): T[][] {
+  const result = [];
+  let current = [];
+
+  for (const item of arr) {
+    if (callback(item)) {
+      if (current.length > 0) result.push(current);
+      current = [];
+    } else {
+      current.push(item);
+    }
+  }
+
+  if (current.length > 0) result.push(current);
+  return result;
 }

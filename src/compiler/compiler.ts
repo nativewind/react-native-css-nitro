@@ -7,7 +7,7 @@ import { maybeMutateReactNativeOptions, parsePropAtRule } from "./atRules";
 import type { CompilerOptions } from "./compiler.types";
 import { inlineVariablesWithSingleUsage } from "./inline-variables";
 import { lightningcssLoader } from "./lightningcss-loader";
-import { CompilerStyleSheet } from "./stylesheet-new";
+import { CompilerStyleSheet } from "./stylesheet";
 import { supportsConditionValid } from "./supports";
 
 const defaultLogger = debug("react-native-css:compiler");

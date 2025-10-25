@@ -63,7 +63,7 @@ import type {
 import type { ValueType } from "react-native-nitro-modules";
 
 import type { DeclarationBuilder } from "./declarations";
-import { toRNProperty } from "./selectors-new";
+import { toRNProperty } from "./selectors";
 
 ColorSpace.register(sRGB);
 ColorSpace.register(P3);

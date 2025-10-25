@@ -19,7 +19,7 @@ import type { CompilerOptions } from "./compiler.types";
 import { getContainerQuery } from "./container-query";
 import { DeclarationBuilder, parseDeclaration } from "./declarations";
 import { mapMediaQueries } from "./media-query";
-import { SelectorParser, type NormalizedSelector } from "./selectors-new";
+import { SelectorParser, type NormalizedSelector } from "./selectors";
 
 function createSpecificity(): SpecificityArray {
   return [0, 0, 0, 0, 0];
