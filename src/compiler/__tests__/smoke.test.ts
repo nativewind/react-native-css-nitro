@@ -15,7 +15,7 @@ test("nested classes", () => {
           },
           s: [0, 0, 0, 0, 0],
           v: {
-            "__rn-css-color": "#f00",
+            "___css-color___": "#f00",
           },
           cq: [
             {

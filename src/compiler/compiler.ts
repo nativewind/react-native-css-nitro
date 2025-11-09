@@ -39,8 +39,10 @@ export function compile(code: Buffer | string, options: CompilerOptions = {}) {
       defaultLogger(code.toString());
     }
   }
+  // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
+  const rem = options.inlineRem || 14;
 
-  const stylesheet = new CompilerStyleSheet(options);
+  const stylesheet = new CompilerStyleSheet(options, rem);
 
   const { lightningcss, Features } = lightningcssLoader();
 
@@ -51,6 +53,7 @@ export function compile(code: Buffer | string, options: CompilerOptions = {}) {
     lightningcss,
     Features,
     logger,
+    rem,
   );
 
   logger(`Lightningcss second pass`);

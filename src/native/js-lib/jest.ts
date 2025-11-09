@@ -27,6 +27,7 @@ export function registerCSS(
 ) {
   const result = compile(css, {
     inlineVariables: false,
+    inlineRem: false,
     ...options,
   });
 

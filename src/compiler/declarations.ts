@@ -50,12 +50,12 @@ export class DeclarationBuilder {
     rule.d ??= {};
     rule.d[property] = value;
 
-    if (property === "font-size") {
+    if (property === "fontSize") {
       rule.v ??= {};
-      rule.v["__rn-css-em"] = value;
+      rule.v["___css-em___"] = value;
     } else if (property === "color") {
       rule.v ??= {};
-      rule.v["__rn-css-color"] = value;
+      rule.v["___css-color___"] = value;
     }
   }
 

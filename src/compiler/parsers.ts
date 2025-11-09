@@ -302,7 +302,7 @@ export function unparsed<
     } else if (tokenOrValue === "false") {
       return false;
     } else if (tokenOrValue === "currentcolor") {
-      return ["fn", "var", "__rn-css-color"] as const;
+      return ["fn", "var", "___css-color___"] as const;
     } else {
       return tokenOrValue;
     }
@@ -341,6 +341,8 @@ export function unparsed<
       switch (tokenOrValue.value.name) {
         case "blur":
         case "brightness":
+        case "calc":
+        case "clamp":
         case "contrast":
         case "cubic-bezier":
         case "drop-shadow":
@@ -351,6 +353,8 @@ export function unparsed<
         case "hsla":
         case "hue-rotate":
         case "invert":
+        case "max":
+        case "min":
         case "opacity":
         case "pixelScale":
         case "platformColor":
@@ -363,10 +367,6 @@ export function unparsed<
         case "saturate":
         case "scale":
         case "scaleX":
-        case "calc":
-        case "max":
-        case "min":
-        case "clamp":
         case "scaleY":
         case "sepia": {
           const args = parseTokens(tokenOrValue.value.arguments, b, allowAuto);
@@ -416,7 +416,7 @@ export function unparsed<
             //b.addWarning("value", value);
             return;
           } else if (value === "currentcolor") {
-            return ["fn", "var", "__rn-css-color"] as const;
+            return ["fn", "var", "___css-color___"] as const;
           }
 
           if (value === "true") {
@@ -442,7 +442,12 @@ export function unparsed<
         case "comma":
           return ",";
         case "delim": {
-          if (tokenOrValue.value.value === "/") {
+          if (
+            tokenOrValue.value.value === "+" ||
+            tokenOrValue.value.value === "-" ||
+            tokenOrValue.value.value === "*" ||
+            tokenOrValue.value.value === "/"
+          ) {
             return tokenOrValue.value.value;
           }
           return;
@@ -1293,7 +1298,7 @@ function color(
 
   switch (cssColor.type) {
     case "currentcolor":
-      return ["fn", "var", "__rn-css-color"] as const;
+      return ["fn", "var", "___css-color___"] as const;
     case "light-dark": {
       // const extraRule: StyleRule = {
       //   s: [],
@@ -1581,7 +1586,7 @@ function direction(
 ) {
   if (["ltr", "rtl"].includes(declaration.value)) {
     b.set("direction", declaration.value);
-    b.setVariable("__rn-css-direction", declaration.value);
+    b.setVariable("___css-direction___", declaration.value);
   }
   //b.addWarning("value", declaration.value);
   return;
@@ -2042,12 +2047,12 @@ export function length(
         if (typeof inlineRem === "number") {
           return value.value * inlineRem;
         } else {
-          return [{}, "rem", round(value.value)];
+          return ["fn", "rem", round(value.value)];
         }
       case "vw":
       case "vh":
       case "em":
-        return [{}, value.unit, round(value.value), 1];
+        return ["fn", value.unit, round(value.value)];
       case "in":
       case "cm":
       case "mm":
@@ -2195,7 +2200,7 @@ function lineHeight(value: LineHeight, b: DeclarationBuilder) {
     case "normal":
       return undefined;
     case "number":
-      return [{}, "em", [value.value], 1];
+      return ["fn", "em", round(value.value)];
     case "length": {
       const lengthValue = value.value;
 

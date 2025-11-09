@@ -40,11 +40,17 @@ export class CompilerStyleSheet {
   private readonly selectorParser: SelectorParser;
   private readonly ruleSets = new Map<string, HybridStyleRule[]>();
   private keyframes: HybridAnimation = {};
-  private rootVariables: AnyMap | undefined;
+  private rootVariables: AnyMap = {};
   private universalVariables: AnyMap | undefined;
 
-  constructor(public options: CompilerOptions) {
+  constructor(
+    public options: CompilerOptions,
+    rem: number | false,
+  ) {
     this.selectorParser = new SelectorParser(options);
+    if (rem) {
+      this.rootVariables["___css-em___"] = [{ v: rem }];
+    }
   }
 
   pushSelectors(selectors: SelectorList): boolean {
@@ -190,11 +196,16 @@ export class CompilerStyleSheet {
       return {};
     }
 
-    return {
+    const stylesheet: HybridStyleSheet = {
       s: Object.fromEntries(this.ruleSets.entries()),
       vr: this.rootVariables,
-      vu: this.universalVariables,
     };
+
+    if (this.universalVariables) {
+      stylesheet.vu = this.universalVariables;
+    }
+
+    return stylesheet;
   }
 
   private appendRule(selector: NormalizedSelector, rule: HybridStyleRule) {
@@ -216,7 +227,6 @@ export class CompilerStyleSheet {
     let target: AnyMap;
 
     if (selector.type === "rootVariables") {
-      this.rootVariables ??= {};
       target = this.rootVariables;
     } else {
       this.universalVariables ??= {};

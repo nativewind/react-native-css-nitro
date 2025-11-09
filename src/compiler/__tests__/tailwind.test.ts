@@ -26,7 +26,7 @@ test("tailwind", async () => {
           },
           s: [0, 0, 0, 0, 0],
           v: {
-            "__rn-css-color": "#fb2c36",
+            "___css-color___": "#fb2c36",
           },
         },
       ],

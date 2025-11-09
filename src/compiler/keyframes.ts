@@ -21,13 +21,9 @@ export function parseEasingFunction(value: CSSEasingFunction[]) {
       case "ease-in-out":
         return value.type;
       case "cubic-bezier":
-        return [
-          {},
-          "cubicBezier",
-          [value.x1, value.y1, value.x2, value.y2],
-        ] as const;
+        return ["fn", "cubicBezier", value.x1, value.y1, value.x2, value.y2];
       case "steps":
-        return [{}, "steps", [value.count, value.position?.type]] as const;
+        return ["fn", "steps", value.count, value.position?.type];
     }
   });
 

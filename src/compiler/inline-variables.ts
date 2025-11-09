@@ -20,6 +20,7 @@ export function inlineVariablesWithSingleUsage(
   lightningcss: Loader["lightningcss"],
   Features: Loader["Features"],
   logger: NonNullable<CompilerOptions["logger"]>,
+  rem: number | false,
 ) {
   /**
    * Use the lightningcss library to traverse the CSS AST and extract style declarations and animations
@@ -37,15 +38,15 @@ export function inlineVariablesWithSingleUsage(
 
   const firstPassVisitor: Visitor<CustomAtRules> = {};
 
-  if (options.inlineRem !== false) {
+  if (rem) {
     firstPassVisitor.Length = (length) => {
-      if (length.unit !== "rem" || options.inlineRem === false) {
+      if (length.unit !== "rem") {
         return length;
       }
 
       return {
         unit: "px",
-        value: round(length.value * (options.inlineRem ?? 14)),
+        value: round(length.value * rem),
       };
     };
   }

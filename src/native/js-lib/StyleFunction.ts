@@ -5,6 +5,7 @@
 
 import type { StyleFunctionDeps } from "./dependencies";
 import type { GetProxy } from "./Effect";
+import { calc } from "./functions/calc";
 import { boxShadow } from "./shorthand/box-shadow";
 import type { AnyValue } from "./types";
 
@@ -31,10 +32,61 @@ export function createStyleFunctionModule(deps: StyleFunctionDeps) {
         const varName = fnArgs[2];
         const fallback = fnArgs.length >= 4 ? fnArgs[3] : undefined;
         return resolveVar(varName, fallback, get, variableScope);
-      } else if (fnName === "boxShadow") {
-        return boxShadow(
-          deps.resolveAnyValue(fnArgs.slice(2), get, variableScope),
-        );
+      }
+
+      switch (fnName) {
+        case "rgb":
+        case "rgba":
+        case "hsl":
+        case "hsla": {
+          const args = deps.resolveAnyValue(
+            fnArgs.slice(2),
+            get,
+            variableScope,
+          );
+          return Array.isArray(args)
+            ? // eslint-disable-next-line @typescript-eslint/no-base-to-string
+              `${fnName}(${args.join(", ")})`
+            : undefined;
+        }
+      }
+
+      switch (fnName) {
+        case "boxShadow":
+          return boxShadow(
+            deps.resolveAnyValue(fnArgs.slice(2), get, variableScope),
+          );
+        case "calc":
+          return calc(
+            deps.resolveAnyValue(fnArgs.slice(2), get, variableScope),
+          );
+        case "em": {
+          const modifier = deps.resolveAnyValue(fnArgs[2], get, variableScope);
+          const em = resolveVar(
+            "___css-em___",
+            ["fn", "var", "___css-rem___"],
+            get,
+            variableScope,
+          );
+
+          if (typeof em === "number" && typeof modifier === "number") {
+            return em * modifier;
+          }
+          return undefined;
+        }
+        case "rem": {
+          const modifier = deps.resolveAnyValue(fnArgs[2], get, variableScope);
+          const rem = resolveVar(
+            "___css-rem___",
+            undefined,
+            get,
+            variableScope,
+          );
+          if (typeof rem === "number" && typeof modifier === "number") {
+            return rem * modifier;
+          }
+          return;
+        }
       }
     }
 
