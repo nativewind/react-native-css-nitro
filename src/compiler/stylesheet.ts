@@ -5,8 +5,9 @@ import type {
   MediaRule,
   SelectorList,
 } from "lightningcss";
+import type { AnyMap } from "react-native-nitro-modules";
 
-import { Specificity } from "../native-cpp/specificity";
+import { Specificity } from "../native/specificity";
 import type {
   HybridAnimation,
   HybridContainerQuery,
@@ -39,6 +40,8 @@ export class CompilerStyleSheet {
   private readonly selectorParser: SelectorParser;
   private readonly ruleSets = new Map<string, HybridStyleRule[]>();
   private keyframes: HybridAnimation = {};
+  private rootVariables: AnyMap | undefined;
+  private universalVariables: AnyMap | undefined;
 
   constructor(public options: CompilerOptions) {
     this.selectorParser = new SelectorParser(options);
@@ -189,6 +192,8 @@ export class CompilerStyleSheet {
 
     return {
       s: Object.fromEntries(this.ruleSets.entries()),
+      vr: this.rootVariables,
+      vu: this.universalVariables,
     };
   }
 
@@ -199,6 +204,42 @@ export class CompilerStyleSheet {
         list.push(rule);
       } else {
         this.ruleSets.set(selector.className, [rule]);
+      }
+
+      return;
+    }
+
+    if (!rule.v) {
+      return;
+    }
+
+    let target: AnyMap;
+
+    if (selector.type === "rootVariables") {
+      this.rootVariables ??= {};
+      target = this.rootVariables;
+    } else {
+      this.universalVariables ??= {};
+      target = this.universalVariables;
+    }
+
+    for (const [key, value] of Object.entries(rule.v)) {
+      target[key] ??= [];
+
+      const variableArray = target[key];
+      if (!Array.isArray(variableArray)) {
+        continue;
+      }
+
+      if (!rule.mq) {
+        variableArray.push({ v: value });
+      } else if (selector.subtype === "dark") {
+        variableArray.push({
+          v: value,
+          m: { $$and: [{ "prefers-color-scheme": "dark" }, rule.mq] },
+        });
+      } else {
+        variableArray.push({ v: value, m: rule.mq });
       }
     }
   }

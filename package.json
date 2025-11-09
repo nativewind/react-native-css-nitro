@@ -11,10 +11,31 @@
       "default": "./lib/module/index.js",
       "import": "./lib/module/index.js"
     },
+    "./compiler": {
+      "source": "./src/compiler/index.ts",
+      "types": "./lib/typescript/module/src/compiler/index.d.ts",
+      "default": "./lib/module/compiler/index.js"
+    },
     "./components/*": {
       "source": "./src/components/*/index.ts",
+      "react-native": "./src/components/*/index.ts",
       "types": "./lib/typescript/module/src/components/*/index.d.ts",
       "default": "./lib/module/components/*/index.js"
+    },
+    "./native": {
+      "source": "./src/native/ts/index.ts",
+      "types": "./lib/typescript/module/src/native/index.d.ts",
+      "default": "./lib/module/native/index.js"
+    },
+    "./native-ts": {
+      "source": "./src/native-ts/index.ts",
+      "types": "./lib/typescript/module/src/native-ts/index.d.ts",
+      "default": "./lib/module/native-ts/index.js"
+    },
+    "./native-cpp": {
+      "source": "./src/native-cpp/index.ts",
+      "types": "./lib/typescript/module/src/native-pp/index.d.ts",
+      "default": "./lib/module/native-cpp/index.js"
     },
     "./metro": {
       "source": "./src/metro/index.ts",
@@ -86,6 +107,7 @@
     "@react-native/typescript-config": "^0.82.0",
     "@release-it/conventional-changelog": "^10.0.1",
     "@tailwindcss/postcss": "^4.1.16",
+    "@testing-library/react-native": "^13.3.3",
     "@types/debug": "^4.1.12",
     "@types/jest": "^29.5.14",
     "@types/node": "^24.8.1",
@@ -123,13 +145,6 @@
     "example"
   ],
   "packageManager": "yarn@3.6.1",
-  "jest": {
-    "preset": "react-native",
-    "modulePathIgnorePatterns": [
-      "<rootDir>/example/node_modules",
-      "<rootDir>/lib/"
-    ]
-  },
   "commitlint": {
     "extends": [
       "@commitlint/config-conventional"
@@ -193,7 +208,8 @@
   "dependencies": {
     "colorjs.io": "0.6.0-alpha.1",
     "comment-json": "^4.4.1",
-    "debug": "^4.4.3"
+    "debug": "^4.4.3",
+    "react-test-renderer": "19.1.0"
   },
   "resolutions": {
     "lightningcss": "1.30.1"

@@ -6,7 +6,7 @@
 import type { AnyMap } from "react-native-nitro-modules";
 
 import { Computed } from "./Computed";
-import type { VariableContextDeps } from "./dependencies";
+import type { Resolver, VariableContextDeps } from "./dependencies";
 import type { GetProxy } from "./Effect";
 import { Observable } from "./Observable";
 import type { AnyValue } from "./types";
@@ -49,17 +49,17 @@ export function createVariableContextModule(deps: VariableContextDeps) {
     return get(varValue);
   }
 
-  function checkContext(
-    contextKey: string,
+  const checkContext: Resolver<string> = (
     name: string,
     get: GetProxy,
-  ): AnyValue | undefined {
+    variableContext: string,
+  ) => {
     // If this is a root or universal context, ensure it exists
-    if (contextKey === "root" || contextKey === "universal") {
-      createContext(contextKey, "root");
+    if (variableContext === "root" || variableContext === "universal") {
+      createContext(variableContext, "root");
     }
 
-    const context = contexts.get(contextKey);
+    const context = contexts.get(variableContext);
     if (context) {
       const valueMap = context.values;
       const varValue = valueMap.get(name);
@@ -67,20 +67,20 @@ export function createVariableContextModule(deps: VariableContextDeps) {
       if (varValue) {
         const value = getValue(varValue, get);
         // Use injected dependency instead of direct import
-        return deps.resolveStyle(value, contextKey, get);
+        return deps.resolveAnyValue(value, get, variableContext);
       } else {
         // Variable doesn't exist in this context
-        if (contextKey === "root" || contextKey === "universal") {
+        if (variableContext === "root" || variableContext === "universal") {
           // For root/universal, create a top-level computed
           const targetMap =
-            contextKey === "root" ? rootValues : universalValues;
+            variableContext === "root" ? rootValues : universalValues;
           const computed = createTopLevelVariableComputed(targetMap, name);
           valueMap.set(name, computed);
 
           // Get the initial value from the computed
           const value = getValue(computed, get);
           // Use injected dependency
-          return deps.resolveStyle(value, contextKey, get);
+          return deps.resolveAnyValue(value, get, variableContext);
         } else {
           // For other contexts, create a new Observable with null
           const observable = Observable.create<AnyValue>(null);
@@ -92,44 +92,40 @@ export function createVariableContextModule(deps: VariableContextDeps) {
       }
     }
     return undefined;
-  }
+  };
 
-  function getVariable(
-    key: string,
-    name: string,
-    get: GetProxy,
-  ): AnyValue | undefined {
+  const getVariable: Resolver<string> = (name, get, variableContext) => {
     // 1. Check current key
-    let result = checkContext(key, name, get);
+    let result = checkContext(name, get, variableContext);
     if (result !== undefined && result !== null) {
       return result;
     }
 
     // 2. Check "universal" context
-    if (key !== "universal") {
-      result = checkContext("universal", name, get);
+    if (variableContext !== "universal") {
+      result = checkContext(name, get, "universal");
       if (result !== undefined && result !== null) {
         return result;
       }
 
       // 3. Walk up the parent chain
-      if (key !== "root") {
-        let currentKey = key;
+      if (variableContext !== "root") {
+        let currentKey = variableContext;
         const context = contexts.get(currentKey);
 
         if (context) {
-          let parentKey = context.parent;
+          let parent = context.parent;
 
-          while (parentKey !== currentKey && parentKey) {
-            result = checkContext(parentKey, name, get);
+          while (parent !== currentKey && parent) {
+            result = checkContext(name, get, parent);
             if (result !== undefined && result !== null) {
               return result;
             }
 
-            const parentContext = contexts.get(parentKey);
+            const parentContext = contexts.get(parent);
             if (parentContext) {
-              currentKey = parentKey;
-              parentKey = parentContext.parent;
+              currentKey = parent;
+              parent = parentContext.parent;
             } else {
               break;
             }
@@ -139,7 +135,7 @@ export function createVariableContextModule(deps: VariableContextDeps) {
     }
 
     return undefined;
-  }
+  };
 
   function setVariable(
     key: string,

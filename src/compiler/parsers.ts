@@ -302,7 +302,7 @@ export function unparsed<
     } else if (tokenOrValue === "false") {
       return false;
     } else if (tokenOrValue === "currentcolor") {
-      return [{}, "var", "__rn-css-color"] as const;
+      return ["fn", "var", "__rn-css-color"] as const;
     } else {
       return tokenOrValue;
     }
@@ -313,9 +313,15 @@ export function unparsed<
   }
 
   if (Array.isArray(tokenOrValue)) {
-    return tokenOrValue
+    const arrayValues = tokenOrValue
       .map((item) => unparsed(item, b, allowAuto))
       .filter((item) => item !== undefined) as ValueType;
+
+    if (Array.isArray(arrayValues) && arrayValues.length === 1) {
+      return arrayValues[0];
+    } else {
+      return arrayValues;
+    }
   }
 
   switch (tokenOrValue.type) {
@@ -410,7 +416,7 @@ export function unparsed<
             //b.addWarning("value", value);
             return;
           } else if (value === "currentcolor") {
-            return [{}, "var", "__rn-css-color"] as const;
+            return ["fn", "var", "__rn-css-color"] as const;
           }
 
           if (value === "true") {
@@ -1287,7 +1293,7 @@ function color(
 
   switch (cssColor.type) {
     case "currentcolor":
-      return [{}, "var", "__rn-css-color"] as const;
+      return ["fn", "var", "__rn-css-color"] as const;
     case "light-dark": {
       // const extraRule: StyleRule = {
       //   s: [],

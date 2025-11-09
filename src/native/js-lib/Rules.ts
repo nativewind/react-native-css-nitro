@@ -8,7 +8,7 @@ import type { AnyMap } from "react-native-nitro-modules";
 import type {
   HybridContainerQuery,
   HybridStyleRule,
-} from "../specs/StyleRegistry";
+} from "../../specs/StyleRegistry";
 import { ContainerContext } from "./ContainerContext";
 import type { GetProxy } from "./Effect";
 import { env } from "./Environment";

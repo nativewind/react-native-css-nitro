@@ -42,6 +42,13 @@ export class Observable<T> {
     this.updateAndNotify(v);
   }
 
+  dispose(): void {
+    for (const e of this.effects) {
+      e.dispose();
+    }
+    this.effects.clear();
+  }
+
   /**
    * Internal: called by the effect's remover lambda to detach
    */

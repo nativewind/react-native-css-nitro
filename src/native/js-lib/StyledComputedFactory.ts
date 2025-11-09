@@ -8,7 +8,7 @@
 
 import type { AnyMap } from "react-native-nitro-modules";
 
-import type { HybridStyleRule, Styled } from "../specs/StyleRegistry";
+import type { HybridStyleRule, Styled } from "../../specs/StyleRegistry";
 import { Computed } from "./Computed";
 import { Effect, type GetProxy } from "./Effect";
 import { Observable } from "./Observable";
@@ -180,10 +180,10 @@ function processDeclarations(
     // Only set if key doesn't already exist (higher specificity wins)
     if (!(key in targetMap)) {
       // Use StyleResolver to resolve the value (handles functions, variables, etc.)
-      const resolvedValue = engine.styleResolver.resolveStyle(
+      const resolvedValue = engine.styleResolver.resolveAnyValue(
         value,
-        variableScope,
         get,
+        variableScope,
       );
 
       // Skip if resolveStyle returns null/undefined (unresolved)
@@ -210,8 +210,8 @@ function convertToAnyMap(
     // Use StyleResolver's helper function to apply style mapping
     return engine.styleResolver.applyStyleMapping(
       mergedMap,
-      variableScope,
       get,
+      variableScope,
       true, // processAnimations = true
     );
   } else {

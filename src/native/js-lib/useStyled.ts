@@ -1,13 +1,48 @@
 import { use, useEffect, useMemo, useReducer } from "react";
+import type { StyleProp } from "react-native";
 
-import { StyleRegistry, type Declarations } from "../specs/StyleRegistry";
-import { testAttributeQuery } from "./attributeQuery";
-import { ContainerContext, VariableContext } from "./contexts";
+import type { Declarations } from "../../specs/StyleRegistry/HybridStyleRegistry.nitro";
+import { testAttributeQuery } from "../attributeQuery";
+import { ContainerContext, VariableContext } from "../contexts";
+import { StyleRegistry } from "./StyleRegistry";
+
+export function useStyled(
+  componentId: string,
+  className: string | undefined,
+  props: Record<string, any>,
+  _inlineStyles: StyleProp<unknown>,
+  isDisabled = false,
+) {
+  return useStyledProps(componentId, className, props, isDisabled);
+}
+
+export function useStyledWithRef(
+  componentId: string,
+  className: string | undefined,
+  props: Record<string, any>,
+  inlineStyles: StyleProp<unknown>,
+  isDisabled = false,
+) {
+  const styled = useStyled(
+    componentId,
+    className,
+    props,
+    inlineStyles,
+    isDisabled,
+  );
+
+  return {
+    styled,
+    ref: props.ref,
+  };
+}
+
+/******************************* IMPLEMENTATION *******************************/
 
 const EMPTY_DECLARATIONS: Declarations = {};
 const REDUCER = <T>(state: T) => ({ ...state });
 
-export function useStyledProps(
+function useStyledProps(
   componentId: string,
   className: string | undefined,
   originalProps: Record<string, any>,
@@ -39,8 +74,6 @@ export function useStyledProps(
 
   // Update the variable scope after we have retrieved the declarations, so it uses its own scope
   variableScope = declarations.variableScope ?? variableScope;
-
-  console.log("useStyled", { variableScope, containerScope });
 
   const componentData = useMemo(() => {
     if (!className) {
@@ -78,7 +111,7 @@ export function useStyledProps(
 
   useEffect(
     () => () => {
-      // StyleRegistry.deregisterComponent(componentId);
+      StyleRegistry.deregisterComponent(componentId);
     },
     [componentId],
   );

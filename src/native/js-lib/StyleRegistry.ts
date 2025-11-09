@@ -6,7 +6,7 @@
  * It coordinates all the style modules and manages component registrations.
  */
 
-import type { LayoutRectangle } from "react-native";
+import { Dimensions, type LayoutRectangle } from "react-native";
 
 import type { AnyMap } from "react-native-nitro-modules";
 
@@ -17,7 +17,9 @@ import type {
   HybridStyleSheet,
   PseudoClassType,
   Styled,
-} from "../specs/StyleRegistry";
+  StyleRegistry as StyleRegistrySpec,
+} from "../../specs/StyleRegistry";
+import { specificitySort } from "../specificity";
 import { Computed } from "./Computed";
 import { ContainerContext } from "./ContainerContext";
 import { Effect } from "./Effect";
@@ -40,7 +42,7 @@ interface ComputedEntry {
 /**
  * Create a style registry instance
  */
-export function createStyleRegistry() {
+function createStyleRegistry(): typeof StyleRegistrySpec {
   // Create the style engine with all modules
   const engine = createStyleEngine();
 
@@ -54,20 +56,19 @@ export function createStyleRegistry() {
     styleRules: HybridStyleRule[],
   ): void {
     // Create a copy of the style rules to modify them
-    const rulesWithIds = styleRules.map((rule) => ({
-      ...rule,
-      id: rule.id ?? String(nextStyleRuleId++),
-    }));
-
-    // Reverse the style rules, this way later on we can bail early if values are already set
-    const reversedRules = [...rulesWithIds].reverse();
+    const rulesWithIds = styleRules
+      .map((rule) => ({
+        ...rule,
+        id: rule.id ?? String(nextStyleRuleId++),
+      }))
+      .sort((a, b) => specificitySort(a.s, b.s));
 
     const existing = styleRuleMap.get(className);
     if (!existing) {
-      const observable = Observable.create<HybridStyleRule[]>(reversedRules);
+      const observable = Observable.create<HybridStyleRule[]>(rulesWithIds);
       styleRuleMap.set(className, observable);
     } else {
-      existing.set(reversedRules);
+      existing.set(rulesWithIds);
     }
   }
 
@@ -80,6 +81,14 @@ export function createStyleRegistry() {
         for (const [className, styleRules] of Object.entries(stylesMap)) {
           setClassname(className, styleRules);
         }
+      }
+
+      if (stylesheet.vr) {
+        setRootVariables(stylesheet.vr);
+      }
+
+      if (stylesheet.vu) {
+        setUniversalVariables(stylesheet.vu);
       }
     });
   }
@@ -228,6 +237,7 @@ export function createStyleRegistry() {
     if (entry) {
       entry.computed.dispose();
       computedMap.delete(componentId);
+      engine.variableContext.deleteContext(componentId);
     }
   }
 
@@ -265,35 +275,62 @@ export function createStyleRegistry() {
     engine.animations.setKeyframes(name, keyframes);
   }
 
-  function updateComponentInlineStyleKeys(
-    _componentId: string,
-    _inlineStyleKeys: string[],
-  ): void {
-    // TODO: Integrate with style computation if needed
-    // For now, this is a no-op
+  function dispose(): void {
+    for (const entry of computedMap.values()) {
+      entry.computed.dispose();
+    }
+    computedMap.clear();
+
+    for (const entry of styleRuleMap.values()) {
+      entry.dispose();
+    }
+    styleRuleMap.clear();
+
+    const { width, height, scale, fontScale } = Dimensions.get("window");
+    StyleRegistry.setWindowDimensions(width, height, scale, fontScale);
   }
 
-  // Note: linkComponent, unlinkComponent, and registerExternalMethods
-  // are not implemented in this TypeScript version as they require
-  // JSI runtime access and shadow tree manipulation
+  const updateComponentInlineStyleKeys: (typeof StyleRegistrySpec)["updateComponentInlineStyleKeys"] =
+    () => {
+      throw new Error("Not implemented in TypeScript version");
+    };
+
+  const linkComponent: (typeof StyleRegistrySpec)["linkComponent"] = () => {
+    throw new Error("Not implemented in TypeScript version");
+  };
+
+  const unlinkComponent: (typeof StyleRegistrySpec)["unlinkComponent"] = () => {
+    throw new Error("Not implemented in TypeScript version");
+  };
+
+  const registerExternalMethods: (typeof StyleRegistrySpec)["registerExternalMethods"] =
+    () => {
+      throw new Error("Not implemented in TypeScript version");
+    };
 
   return {
-    setClassname,
+    name: "StyleRegistry",
+    equals: () => false,
     addStyleSheet,
+    deregisterComponent,
+    dispose,
+    getDeclarations,
+    linkComponent,
+    registerComponent,
+    registerExternalMethods,
+    setClassname,
+    setKeyframes,
     setRootVariables,
     setUniversalVariables,
-    getDeclarations,
-    registerComponent,
-    deregisterComponent,
-    updateComponentState,
-    updateComponentLayout,
     setWindowDimensions,
-    setKeyframes,
+    unlinkComponent,
     updateComponentInlineStyleKeys,
+    updateComponentLayout,
+    updateComponentState,
   };
 }
 
-/**
- * Type for the style registry
- */
-export type StyleRegistry = ReturnType<typeof createStyleRegistry>;
+export const StyleRegistry = createStyleRegistry();
+
+const { width, height, scale, fontScale } = Dimensions.get("window");
+StyleRegistry.setWindowDimensions(width, height, scale, fontScale);

@@ -177,7 +177,12 @@ function unparsedDeclaration(
     if (value === undefined) {
       return;
     }
-    return ["fn", toRNProperty(property), ...value];
+
+    if (Array.isArray(value) && value[0] !== "fn") {
+      return ["fn", toRNProperty(property), ...value];
+    } else {
+      return ["fn", toRNProperty(property), value];
+    }
   } else {
     return unparsed(declaration.value.value, rule);
   }

@@ -3,7 +3,7 @@
  * Converted from cpp/PseudoClasses.cpp
  */
 
-import type { PseudoClassType } from "../specs/StyleRegistry";
+import type { PseudoClassType } from "../../specs/StyleRegistry";
 import type { GetProxy } from "./Effect";
 import { Observable } from "./Observable";
 

@@ -6,7 +6,7 @@
 import type { AnyMap } from "react-native-nitro-modules";
 
 import { Computed } from "./Computed";
-import type { AnimationsDeps } from "./dependencies";
+import type { AnimationsDeps, Resolver } from "./dependencies";
 import { Effect } from "./Effect";
 import type { GetProxy } from "./Effect";
 import { Observable } from "./Observable";
@@ -42,11 +42,7 @@ export function createAnimationsModule(deps: AnimationsDeps) {
     });
   }
 
-  function getKeyframes(
-    name: string,
-    variableScope: string,
-    get: GetProxy,
-  ): AnyMap {
+  const getKeyframes: Resolver<string, AnyMap> = (name, get, variableScope) => {
     // First, ensure the Observable exists for this keyframe name
     let observable = keyframesObservables.get(name);
     if (!observable) {
@@ -106,10 +102,10 @@ export function createAnimationsModule(deps: AnimationsDeps) {
               if (isAnyMap(frameMap)) {
                 for (const [frameKey, frameValue] of Object.entries(frameMap)) {
                   // Resolve the value using StyleResolver
-                  const resolvedValue = deps.resolveStyle(
+                  const resolvedValue = deps.resolveAnyValue(
                     frameValue,
-                    variableScope,
                     get,
+                    variableScope,
                   );
 
                   resolvedFrameMap[frameKey] = resolvedValue;
@@ -119,8 +115,8 @@ export function createAnimationsModule(deps: AnimationsDeps) {
               // Apply style mapping to the resolved frame (don't process animations to avoid recursion)
               const transformedFrame = deps.applyStyleMapping(
                 resolvedFrameMap,
-                variableScope,
                 get,
+                variableScope,
                 false, // processAnimations = false to avoid recursion
               );
 
@@ -145,7 +141,7 @@ export function createAnimationsModule(deps: AnimationsDeps) {
       return {};
     }
     return get(computed);
-  }
+  };
 
   function deleteScope(variableScope: string): void {
     scopedComputeds.delete(variableScope);

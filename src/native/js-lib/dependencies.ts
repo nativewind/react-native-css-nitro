@@ -10,15 +10,17 @@ import type { AnyMap } from "react-native-nitro-modules";
 import type { GetProxy } from "./Effect";
 import type { AnyValue } from "./types";
 
+export type Resolver<T = AnyValue, R = AnyValue> = (
+  value: T,
+  get: GetProxy,
+  variableScope: string,
+) => R;
+
 /**
  * Dependencies needed by VariableContext module
  */
 export interface VariableContextDeps {
-  resolveStyle: (
-    value: AnyValue,
-    variableScope: string,
-    get: GetProxy,
-  ) => AnyValue;
+  resolveAnyValue: Resolver;
   testVariableMedia: (mediaMap: AnyMap, get: GetProxy) => boolean;
 }
 
@@ -26,31 +28,19 @@ export interface VariableContextDeps {
  * Dependencies needed by StyleFunction module
  */
 export interface StyleFunctionDeps {
-  getVariable: (
-    variableScope: string,
-    name: string,
-    get: GetProxy,
-  ) => AnyValue | undefined;
-  resolveStyle: (
-    value: AnyValue,
-    variableScope: string,
-    get: GetProxy,
-  ) => AnyValue;
+  getVariable: Resolver<string>;
+  resolveAnyValue: Resolver;
 }
 
 /**
  * Dependencies needed by Animations module
  */
 export interface AnimationsDeps {
-  resolveStyle: (
-    value: AnyValue,
-    variableScope: string,
-    get: GetProxy,
-  ) => AnyValue;
+  resolveAnyValue: Resolver;
   applyStyleMapping: (
     inputMap: Record<string, AnyValue>,
-    variableScope: string,
     get: GetProxy,
+    variableScope: string,
     processAnimations: boolean,
   ) => AnyMap;
 }
@@ -59,10 +49,6 @@ export interface AnimationsDeps {
  * Dependencies needed by StyleResolver module
  */
 export interface StyleResolverDeps {
-  resolveStyleFn: (
-    fnArgs: AnyValue[],
-    get: GetProxy,
-    variableScope: string,
-  ) => AnyValue;
-  getKeyframes: (name: string, variableScope: string, get: GetProxy) => AnyMap;
+  resolveStyleFn: Resolver<AnyValue[]>;
+  getKeyframes: Resolver<string, AnyMap>;
 }

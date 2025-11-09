@@ -5,7 +5,7 @@
 
 import type { AnyMap } from "react-native-nitro-modules";
 
-import type { StyleResolverDeps } from "./dependencies";
+import type { Resolver, StyleResolverDeps } from "./dependencies";
 import type { GetProxy } from "./Effect";
 import type { AnyValue } from "./types";
 
@@ -14,28 +14,28 @@ import type { AnyValue } from "./types";
  * Accepts dependencies to avoid circular imports
  */
 export function createStyleResolverModule(deps: StyleResolverDeps) {
-  function resolveStyle(
-    value: AnyValue,
-    variableScope: string,
-    get: GetProxy,
-  ): AnyValue {
+  const resolveAnyValue: Resolver = (value, get, variableScope) => {
     // Check if value is an array
     if (Array.isArray(value)) {
       // Check if array has at least one element and first element is "fn"
       if (value.length > 0 && value[0] === "fn") {
         // Resolve the function using injected dependency
         return deps.resolveStyleFn(value, get, variableScope);
+      } else {
+        return value.map((item) =>
+          resolveAnyValue(item, get, variableScope),
+        ) as AnyValue;
       }
     }
 
     // Otherwise return the value as-is
     return value;
-  }
+  };
 
   function applyStyleMapping(
     inputMap: Record<string, AnyValue>,
-    variableScope: string,
     get: GetProxy,
+    variableScope: string,
     processAnimations: boolean,
   ): AnyMap {
     const transformProps = new Set([
@@ -63,7 +63,7 @@ export function createStyleResolverModule(deps: StyleResolverDeps) {
         if (typeof value === "string") {
           // Single animation name
           const animName = value;
-          const keyframes = deps.getKeyframes(animName, variableScope, get);
+          const keyframes = deps.getKeyframes(animName, get, variableScope);
 
           // Set animationName to the resolved keyframes object
           result.animationName = keyframes;
@@ -75,7 +75,7 @@ export function createStyleResolverModule(deps: StyleResolverDeps) {
           for (const animNameValue of animNames) {
             if (typeof animNameValue === "string") {
               const animName = animNameValue;
-              const keyframes = deps.getKeyframes(animName, variableScope, get);
+              const keyframes = deps.getKeyframes(animName, get, variableScope);
               keyframesArray.push(keyframes);
             }
           }
@@ -133,7 +133,7 @@ export function createStyleResolverModule(deps: StyleResolverDeps) {
 
   // Return the public API
   return {
-    resolveStyle,
+    resolveAnyValue,
     applyStyleMapping,
   };
 }

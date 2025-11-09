@@ -246,6 +246,7 @@ namespace margelo::nitro::cssnitro {
             }
             computedMap_.erase(it);
         }
+        VariableContext::deleteContext(componentId);
     }
 
     void HybridStyleRegistry::updateComponentState(const std::string &componentId,

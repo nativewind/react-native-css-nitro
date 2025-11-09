@@ -35,8 +35,6 @@ export function withReactNativeCSS<
     throw new Error("react-native-css only supports NodeJS >20");
   }
 
-  console.log("asdf", (global as any).__REACT_NATIVE_METRO_CONFIG_LOADED);
-
   const {
     disableTypeScriptGeneration,
     typescriptEnvPath,

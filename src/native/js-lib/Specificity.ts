@@ -3,7 +3,7 @@
  * Converted from cpp/Specificity.hpp
  */
 
-import type { SpecificityArray } from "../specs/StyleRegistry";
+import type { SpecificityArray } from "../../specs/StyleRegistry";
 
 export const Specificity = {
   /**
