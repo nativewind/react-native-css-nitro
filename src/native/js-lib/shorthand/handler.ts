@@ -16,6 +16,20 @@ type ShorthandDefaultValue = readonly [
 
 export type ShorthandResolver = (args: AnyValue) => AnyValue;
 
+function matchesType(value: any, type: ShorthandType): boolean {
+  switch (type) {
+    case "string":
+    case "number":
+      return typeof value === type;
+    case "color":
+      return typeof value === "string" || typeof value === "object";
+    case "length":
+      return typeof value === "string"
+        ? value.endsWith("%")
+        : typeof value === "number";
+  }
+}
+
 export function createShorthandResolver(
   mappings: ShorthandRequiredValue[][],
   defaults: ShorthandDefaultValue[],
@@ -26,63 +40,63 @@ export function createShorthandResolver(
       return;
     }
 
-    const match = mappings.find((mapping) => {
-      return (
-        args.length === mapping.length &&
-        mapping.every((map, index) => {
-          const type = map[1];
-          const value = args[index];
+    // Find a mapping pattern that matches the argument types
+    const matchedMapping = mappings.find((mapping) => {
+      if (args.length !== mapping.length) return false;
 
-          if (Array.isArray(type)) {
-            return type.includes(value) || type.includes(typeof value);
-          }
+      return mapping.every((definition, index) => {
+        const expectedType = definition[1];
+        const value = args[index];
 
-          switch (type) {
-            case "string":
-            case "number":
-              return typeof value === type;
-            case "color":
-              return typeof value === "string" || typeof value === "object";
-            case "length":
-              return typeof value === "string"
-                ? value.endsWith("%")
-                : typeof value === "number";
-          }
-        })
-      );
+        // Handle array of allowed values/types
+        if (Array.isArray(expectedType)) {
+          return (
+            expectedType.includes(value) || expectedType.includes(typeof value)
+          );
+        }
+
+        // Handle specific type checks
+        return matchesType(value, expectedType);
+      });
     });
 
-    if (!match) return;
+    if (!matchedMapping) return;
 
-    const seenDefaults = new Set(defaults);
+    // Track which defaults were provided in the matched mapping
+    const providedDefaults = new Set<ShorthandDefaultValue>();
+    matchedMapping.forEach((def) => {
+      if (def.length === 3) {
+        providedDefaults.add(def);
+      }
+    });
 
+    // Build tuples from matched args + unfulfilled defaults
     const tuples: [ValueType, string][] = [
-      ...match.map((map, index) => {
-        if (map.length === 3) {
-          seenDefaults.delete(map);
-        }
-        const value = args[index];
-        return [value, map[0]] as [ValueType, string];
+      ...matchedMapping.map((definition, index) => {
+        const propertyName = Array.isArray(definition[0])
+          ? definition[0][0]
+          : definition[0];
+        return [args[index], propertyName] as [ValueType, string];
       }),
-      ...Array.from(seenDefaults).map((map) => {
-        const value = defaults[map[2]] ?? map[2];
-        return [value, map[0]] as [ValueType, string];
-      }),
+      ...defaults
+        .filter((def) => !providedDefaults.has(def))
+        .map((def) => {
+          const propertyName = Array.isArray(def[0]) ? def[0][0] : def[0];
+          return [def[2], propertyName] as [ValueType, string];
+        }),
     ];
 
-    if (returnType === "shorthandObject" || returnType === "object") {
-      const target: AnyMap = returnType === "shorthandObject" ? {} : {};
-
-      for (const [value, prop] of tuples) {
-        if (typeof prop === "string") {
-          target[prop] = value;
-        }
-      }
-
-      return target;
-    } else {
+    // Return based on requested format
+    if (returnType === "tuples") {
       return tuples;
     }
+
+    // Both "shorthandObject" and "object" return the same structure
+    const result: AnyMap = {};
+    for (const [value, prop] of tuples) {
+      result[prop] = value;
+    }
+    return result;
   };
 
   const bulkResolver: ShorthandResolver = (args): AnyValue => {
@@ -90,37 +104,37 @@ export function createShorthandResolver(
       return;
     }
 
-    args = args.flat(10);
-
+    // Flatten and split into groups by comma
+    const flatArgs = args.flat(10);
     const groups: AnyValue[][] = [];
-    let current: AnyValue[] | undefined;
+    let current: AnyValue[] = [];
 
-    for (const item of args) {
+    for (const item of flatArgs) {
       if (item === ",") {
-        if (current && current.length > 0) {
+        if (current.length > 0) {
           groups.push(current);
+          current = [];
         }
-        current = undefined;
-        continue;
+      } else {
+        current.push(item);
       }
-
-      current ??= [];
-      current.push(item);
     }
 
-    if (current && current.length > 0) {
+    // Add the last group if it has items
+    if (current.length > 0) {
       groups.push(current);
     }
 
-    const firstGroup = groups[0];
-
+    // Process groups
     if (groups.length === 0) {
       return;
-    } else if (groups.length === 1 && firstGroup) {
-      return resolver(firstGroup as AnyValue);
-    } else {
-      return groups.map((group) => resolver(group as AnyValue)) as AnyValue;
     }
+
+    if (groups.length === 1) {
+      return resolver(groups[0] as AnyValue);
+    }
+
+    return groups.map((group) => resolver(group as AnyValue)) as AnyValue;
   };
 
   return bulkResolver;
