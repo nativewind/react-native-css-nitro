@@ -10,7 +10,7 @@ import type { AnyMap } from "react-native-nitro-modules";
 import type { GetProxy } from "./Effect";
 import type { AnyValue } from "./types";
 
-export type Resolver<T = AnyValue, R = AnyValue> = (
+export type Resolver<T = AnyValue | AnyValue[], R = AnyValue> = (
   value: T,
   get: GetProxy,
   variableScope: string,

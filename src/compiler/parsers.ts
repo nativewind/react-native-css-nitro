@@ -440,7 +440,7 @@ export function unparsed<
         case "dimension":
           return length(tokenOrValue.value, b);
         case "comma":
-          return CommaSeparator as any;
+          return ",";
         case "delim": {
           if (tokenOrValue.value.value === "/") {
             return tokenOrValue.value.value;
@@ -2904,7 +2904,6 @@ export function round(number: number) {
   return Math.round((number + Number.EPSILON) * 10000) / 10000;
 }
 
-const CommaSeparator = Symbol("CommaSeparator");
 function parseTokens(
   tokenOrValues: TokenOrValue[],
   b: DeclarationBuilder,

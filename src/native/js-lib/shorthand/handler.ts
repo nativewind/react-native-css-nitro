@@ -85,5 +85,43 @@ export function createShorthandResolver(
     }
   };
 
-  return resolver;
+  const bulkResolver: ShorthandResolver = (args): AnyValue => {
+    if (!Array.isArray(args)) {
+      return;
+    }
+
+    args = args.flat(10);
+
+    const groups: AnyValue[][] = [];
+    let current: AnyValue[] | undefined;
+
+    for (const item of args) {
+      if (item === ",") {
+        if (current && current.length > 0) {
+          groups.push(current);
+        }
+        current = undefined;
+        continue;
+      }
+
+      current ??= [];
+      current.push(item);
+    }
+
+    if (current && current.length > 0) {
+      groups.push(current);
+    }
+
+    const firstGroup = groups[0];
+
+    if (groups.length === 0) {
+      return;
+    } else if (groups.length === 1 && firstGroup) {
+      return resolver(firstGroup as AnyValue);
+    } else {
+      return groups.map((group) => resolver(group as AnyValue)) as AnyValue;
+    }
+  };
+
+  return bulkResolver;
 }

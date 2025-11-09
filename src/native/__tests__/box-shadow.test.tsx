@@ -48,7 +48,7 @@ test("shadow values - multiple nested variables", () => {
     boxShadow: [
       {
         blurRadius: 0,
-        color: "#f00",
+        color: "red",
         offsetX: 0,
         offsetY: 20,
         spreadDistance: 0,
@@ -56,35 +56,35 @@ test("shadow values - multiple nested variables", () => {
 
       {
         blurRadius: 0,
-        color: "#008000",
+        color: "green",
         offsetX: 0,
         offsetY: 30,
         spreadDistance: 0,
       },
       {
         blurRadius: 0,
-        color: "#800080",
+        color: "purple",
         offsetX: 0,
         offsetY: 40,
         spreadDistance: 0,
       },
       {
         blurRadius: 0,
-        color: "#ff0",
+        color: "yellow",
         offsetX: 0,
         offsetY: 50,
         spreadDistance: 0,
       },
       {
         blurRadius: 0,
-        color: "#ffa500",
+        color: "orange",
         offsetX: 0,
         offsetY: 60,
         spreadDistance: 0,
       },
       {
         blurRadius: 0,
-        color: "#808080",
+        color: "gray",
         offsetX: 0,
         offsetY: 70,
         spreadDistance: 0,

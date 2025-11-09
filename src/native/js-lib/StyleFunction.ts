@@ -32,7 +32,9 @@ export function createStyleFunctionModule(deps: StyleFunctionDeps) {
         const fallback = fnArgs.length >= 4 ? fnArgs[3] : undefined;
         return resolveVar(varName, fallback, get, variableScope);
       } else if (fnName === "boxShadow") {
-        return boxShadow(deps.resolveAnyValue(fnArgs[2], get, variableScope));
+        return boxShadow(
+          deps.resolveAnyValue(fnArgs.slice(2), get, variableScope),
+        );
       }
     }
 
